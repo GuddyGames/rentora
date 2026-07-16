@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-mist text-midnight font-body antialiased;
+}
+
+:focus-visible {
+  outline: 2px solid theme('colors.gold');
+  outline-offset: 2px;
+}
+
+/* tap feedback everywhere — small, consistent, not jerky */
+button {
+  @apply transition-transform duration-150;
+}
+button:active {
+  @apply scale-95;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* light floating card — used across the app on the F8FAFC background */
+.glass {
+  @apply border border-black/5 bg-white shadow-lg shadow-black/5;
+}
+
+/* dark surface — reserved for the navbar and the home hero, the one
+   cinematic dark moment per the design script */
+.glass-dark {
+  @apply border border-white/10 bg-midnightdeep/90 backdrop-blur-md;
+}
+
+/* skeleton loader shimmer */
+.skeleton {
+  background: linear-gradient(90deg, rgba(0,0,0,0.04) 25%, rgba(0,0,0,0.08) 37%, rgba(0,0,0,0.04) 63%);
+  background-size: 400% 100%;
+  animation: skeleton-shimmer 1.4s ease infinite;
+}
+@keyframes skeleton-shimmer {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0 50%; }
+}
