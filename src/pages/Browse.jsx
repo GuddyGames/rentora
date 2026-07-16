@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { getAllListings, CATEGORIES } from '../services/listings'
 import ListingCard from '../components/ListingCard'
 import { ListingCardSkeleton } from '../components/Skeleton'
+import BackButton from '../components/BackButton'
 
 export default function Browse() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -37,6 +38,7 @@ export default function Browse() {
 
   return (
     <div className="mx-auto max-w-6xl px-5 py-10">
+      <BackButton to="/" />
       <h1 className="font-display text-3xl font-semibold text-midnight">Browse equipment</h1>
       {searchTerm && <p className="mt-1 text-sm text-muted">Showing results for "{searchTerm}"</p>}
 

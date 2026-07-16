@@ -5,20 +5,24 @@ import { getListingsByOwner } from '../services/listings'
 import { getBookingsForOwner, updateBookingStatus, nextStatus, STATUS_STEPS } from '../services/bookings'
 import BookingTimeline from '../components/BookingTimeline'
 import Skeleton from '../components/Skeleton'
+import BackButton from '../components/BackButton'
 
 export default function Dashboard() {
   const { user, profile } = useAuth()
   const [listings, setListings] = useState([])
   const [bookings, setBookings] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     if (!user) return
-    Promise.all([getListingsByOwner(user.uid), getBookingsForOwner(user.uid)]).then(([l, b]) => {
-      setListings(l)
-      setBookings(b)
-      setLoading(false)
-    })
+    Promise.all([getListingsByOwner(user.uid), getBookingsForOwner(user.uid)])
+      .then(([l, b]) => {
+        setListings(l)
+        setBookings(b)
+      })
+      .catch((e) => setError(e.message))
+      .finally(() => setLoading(false))
   }, [user])
 
   async function handleStatus(id, status) {
@@ -28,6 +32,7 @@ export default function Dashboard() {
 
   return (
     <div className="mx-auto max-w-5xl px-5 py-10">
+      <BackButton />
       <div className="flex items-center justify-between">
         <h1 className="font-display text-3xl font-semibold text-midnight">
           Welcome back{profile?.name ? `, ${profile.name}` : ''}
@@ -40,11 +45,17 @@ export default function Dashboard() {
         </Link>
       </div>
 
+      {error && (
+        <p className="mt-6 rounded-xl border border-ruby/30 bg-ruby/10 p-4 text-sm text-ruby">
+          Couldn't load your dashboard: {error}
+        </p>
+      )}
+
       {loading ? (
         <div className="mt-10 space-y-3">
           {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-20 w-full" />)}
         </div>
-      ) : (
+      ) : error ? null : (
         <>
           <section className="mt-10">
             <h2 className="font-display text-xl font-semibold text-midnight">Your listings ({listings.length})</h2>

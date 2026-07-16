@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { EVENT_TYPES, generateChecklist } from '../utils/eventChecklist'
 import { getAllListings } from '../services/listings'
+import BackButton from '../components/BackButton'
 
 const STEPS = ['type', 'guests', 'setting', 'budget', 'result']
 
@@ -53,6 +54,19 @@ export default function PlanEvent() {
 
   return (
     <div className="mx-auto max-w-xl px-5 py-14">
+      {stepIdx === 0 ? (
+        <BackButton to="/" />
+      ) : (
+        <button
+          onClick={() => goTo(stepIdx - 1)}
+          className="mb-4 flex items-center gap-1.5 text-sm text-midnight/60 hover:text-gold transition-colors"
+        >
+          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          Back
+        </button>
+      )}
       <p className="font-mono text-xs uppercase tracking-[0.2em] text-gold">✨ Plan my event</p>
 
       {/* progress dots */}

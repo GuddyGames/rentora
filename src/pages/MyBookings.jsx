@@ -4,6 +4,7 @@ import { getBookingsForRenter } from '../services/bookings'
 import { addReview, hasReviewed } from '../services/reviews'
 import BookingTimeline from '../components/BookingTimeline'
 import Skeleton from '../components/Skeleton'
+import BackButton from '../components/BackButton'
 
 function ReviewForm({ booking, onDone }) {
   const { user, profile } = useAuth()
@@ -83,6 +84,7 @@ export default function MyBookings() {
 
   return (
     <div className="mx-auto max-w-3xl px-5 py-10">
+      <BackButton to="/" />
       <h1 className="font-display text-3xl font-semibold text-midnight">My bookings</h1>
 
       {loading ? (

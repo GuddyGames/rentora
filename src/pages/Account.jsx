@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import BackButton from '../components/BackButton'
 
 function Row({ icon, label, to, onClick, danger }) {
   const className = `flex items-center justify-between rounded-2xl px-4 py-4 transition-colors ${
@@ -33,6 +34,7 @@ export default function Account() {
 
   return (
     <div className="mx-auto max-w-md px-5 py-10">
+      <BackButton to="/" label="Home" />
       <h1 className="font-display text-2xl font-semibold text-midnight">My Account</h1>
 
       <div className="glass mt-6 flex items-center gap-4 rounded-2xl p-5">

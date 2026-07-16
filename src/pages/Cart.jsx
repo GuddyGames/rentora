@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
+import BackButton from '../components/BackButton'
 
 export default function Cart() {
   const { items, removeFromCart, setQty, subtotal, deliveryTotal, depositTotal, total } = useCart()
@@ -8,6 +9,7 @@ export default function Cart() {
   if (items.length === 0) {
     return (
       <div className="mx-auto max-w-2xl px-5 py-16 text-center">
+        <BackButton to="/browse" />
         <h1 className="font-display text-3xl font-semibold text-midnight">Your cart is empty</h1>
         <p className="mt-3 text-midnight/60">Add equipment from the browse page to get started.</p>
         <Link to="/browse" className="mt-6 inline-block rounded-full bg-gold px-6 py-3 font-medium text-midnightdeep hover:brightness-110 transition-colors">
@@ -19,6 +21,7 @@ export default function Cart() {
 
   return (
     <div className="mx-auto max-w-3xl px-5 py-10">
+      <BackButton to="/browse" />
       <h1 className="font-display text-3xl font-semibold text-midnight">Your cart</h1>
 
       <div className="mt-6 space-y-3">

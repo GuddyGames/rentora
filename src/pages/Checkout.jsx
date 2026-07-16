@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import { hasConflict, createBooking, markPaid } from '../services/bookings'
 import { getCoupon } from '../services/coupons'
 import PaymentSuccessOverlay from '../components/PaymentSuccessOverlay'
+import BackButton from '../components/BackButton'
 
 export default function Checkout() {
   const { items, total, clearCart } = useCart()
@@ -104,6 +105,7 @@ export default function Checkout() {
 
   return (
     <div className="mx-auto max-w-lg px-5 py-10">
+      <BackButton to="/cart" label="Cart" />
       <h1 className="font-display text-3xl font-semibold text-midnight">Checkout</h1>
 
       <label className="mt-6 block text-sm text-midnight/70">

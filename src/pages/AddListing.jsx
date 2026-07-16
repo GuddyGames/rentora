@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { createListing, CATEGORIES } from '../services/listings'
 import { compressImage } from '../utils/compressImage'
 import { useAuth } from '../context/AuthContext'
+import BackButton from '../components/BackButton'
 
 export default function AddListing() {
   const { user, profile } = useAuth()
@@ -57,6 +58,7 @@ export default function AddListing() {
 
   return (
     <div className="mx-auto max-w-lg px-5 py-10">
+      <BackButton to="/dashboard" label="Dashboard" />
       <h1 className="font-display text-3xl font-semibold text-midnight">List equipment</h1>
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">

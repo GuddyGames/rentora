@@ -6,6 +6,7 @@ import { getReviewsForListing } from '../services/reviews'
 import { getOrCreateConversation } from '../services/chat'
 import { useAuth } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
+import BackButton from '../components/BackButton'
 
 function daysBetween(start, end) {
   const ms = new Date(end) - new Date(start)
@@ -76,6 +77,7 @@ export default function ListingDetail() {
 
   return (
     <div className="mx-auto max-w-4xl px-5 py-10">
+      <BackButton to="/browse" label="Browse" />
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
         <div>
           <div className="aspect-video overflow-hidden rounded-2xl bg-card/10">
