@@ -15,6 +15,7 @@ export default function PlanEvent() {
   const [budget, setBudget] = useState('')
   const [thinking, setThinking] = useState(false)
   const [checklist, setChecklist] = useState(null)
+  const [buildError, setBuildError] = useState('')
 
   // arriving from a Home event-type card pre-selects the type and skips ahead
   useEffect(() => {
@@ -32,18 +33,30 @@ export default function PlanEvent() {
   async function handleBuildChecklist() {
     setThinking(true)
     setStepIdx(4)
+    setBuildError('')
     const items = generateChecklist(eventType, guests, setting)
-    const withPricing = await Promise.all(
-      items.map(async (item) => {
-        const listings = await getAllListings({ category: item.category })
-        const avgPrice = listings.length
-          ? listings.reduce((sum, l) => sum + l.pricePerDay, 0) / listings.length
-          : null
-        return { ...item, avgPrice, listingCount: listings.length }
-      })
-    )
-    setChecklist(withPricing)
-    setThinking(false)
+    try {
+      const withPricing = await Promise.all(
+        items.map(async (item) => {
+          try {
+            const listings = await getAllListings({ category: item.category })
+            const avgPrice = listings.length
+              ? listings.reduce((sum, l) => sum + l.pricePerDay, 0) / listings.length
+              : null
+            return { ...item, avgPrice, listingCount: listings.length }
+          } catch {
+            // one category's query failing (e.g. a missing Firestore index)
+            // shouldn't block the rest of the checklist
+            return { ...item, avgPrice: null, listingCount: 0 }
+          }
+        })
+      )
+      setChecklist(withPricing)
+    } catch (e) {
+      setBuildError(e.message)
+    } finally {
+      setThinking(false)
+    }
   }
 
   const total = checklist ? checklist.reduce((sum, i) => sum + (i.avgPrice ? i.avgPrice * i.quantity : 0), 0) : 0
@@ -171,7 +184,14 @@ export default function PlanEvent() {
               <div className="h-10 w-10 animate-spin rounded-full border-2 border-gold border-t-transparent" />
               <p className="mt-4 text-midnight/70">Putting your checklist together…</p>
             </div>
-          ) : (
+          ) : buildError ? (
+            <div className="py-10 text-center">
+              <p className="text-ruby">Couldn't build your checklist: {buildError}</p>
+              <button onClick={handleBuildChecklist} className="mt-4 rounded-full border border-black/15 px-5 py-2 text-sm text-midnight hover:border-gold hover:text-gold">
+                Try again
+              </button>
+            </div>
+          ) : checklist ? (
             <div className="animate-pop-in">
               <h2 className="font-display text-xl font-semibold text-midnight">Here's what you'll need</h2>
               <div className="mt-4 space-y-2">
@@ -206,6 +226,14 @@ export default function PlanEvent() {
                   ₦{Math.round(total).toLocaleString()}
                 </span>
               </div>
+              {(() => {
+                const pricedCount = checklist.filter((i) => i.avgPrice).length
+                return pricedCount < checklist.length ? (
+                  <p className="mt-2 text-xs text-muted">
+                    Based on {pricedCount} of {checklist.length} categories with active listings — the rest aren't stocked yet, so this total is likely an undercount for a full event this size.
+                  </p>
+                ) : null
+              })()}
               {budgetNum > 0 && (
                 <p className={`mt-2 text-sm ${overBudget ? 'text-ruby' : 'text-emerald'}`}>
                   {overBudget
@@ -221,7 +249,7 @@ export default function PlanEvent() {
                 Start booking
               </Link>
             </div>
-          )}
+          ) : null}
         </div>
       )}
     </div>

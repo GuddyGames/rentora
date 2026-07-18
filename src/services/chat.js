@@ -53,11 +53,13 @@ export async function sendMessage(conversationId, { senderId, senderName, text }
 }
 
 // live listener — returns an unsubscribe function
-export function listenToMessages(conversationId, onUpdate) {
+export function listenToMessages(conversationId, onUpdate, onError) {
   const q = query(collection(db, 'conversations', conversationId, 'messages'), orderBy('createdAt', 'asc'))
-  return onSnapshot(q, (snap) => {
-    onUpdate(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
-  })
+  return onSnapshot(
+    q,
+    (snap) => onUpdate(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
+    (err) => onError && onError(err)
+  )
 }
 
 export async function getConversation(conversationId) {

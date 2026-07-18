@@ -26,14 +26,15 @@ export default function ListingDetail() {
   const [endDate, setEndDate] = useState('')
   const [status, setStatus] = useState('') // '', 'checking', 'conflict', 'ready'
   const [errorMsg, setErrorMsg] = useState('')
+  const [loadError, setLoadError] = useState('')
   const [messaging, setMessaging] = useState(false)
 
   useEffect(() => {
-    getListing(id).then((l) => {
-      setListing(l)
-      setLoading(false)
-    })
-    getReviewsForListing(id).then(setReviews)
+    getListing(id)
+      .then((l) => setListing(l))
+      .catch((e) => setLoadError(e.message))
+      .finally(() => setLoading(false))
+    getReviewsForListing(id).then(setReviews).catch(() => {})
   }, [id])
 
   const totalDays = useMemo(() => (startDate && endDate ? daysBetween(startDate, endDate) : 0), [startDate, endDate])
@@ -47,8 +48,13 @@ export default function ListingDetail() {
     }
     setErrorMsg('')
     setStatus('checking')
-    const conflict = await hasConflict(id, startDate, endDate)
-    setStatus(conflict ? 'conflict' : 'ready')
+    try {
+      const conflict = await hasConflict(id, startDate, endDate)
+      setStatus(conflict ? 'conflict' : 'ready')
+    } catch (e) {
+      setErrorMsg(`Couldn't check availability: ${e.message}`)
+      setStatus('')
+    }
   }
 
   function handleAddToCart() {
@@ -61,18 +67,24 @@ export default function ListingDetail() {
     if (!user) { navigate('/login'); return }
     if (user.uid === listing.ownerId) return
     setMessaging(true)
-    const conversationId = await getOrCreateConversation({
-      listingId: listing.id,
-      listingTitle: listing.title,
-      ownerId: listing.ownerId,
-      ownerName: listing.ownerName,
-      renterId: user.uid,
-      renterName: profile?.name || user.email,
-    })
-    navigate(`/messages/${conversationId}`)
+    try {
+      const conversationId = await getOrCreateConversation({
+        listingId: listing.id,
+        listingTitle: listing.title,
+        ownerId: listing.ownerId,
+        ownerName: listing.ownerName,
+        renterId: user.uid,
+        renterName: profile?.name || user.email,
+      })
+      navigate(`/messages/${conversationId}`)
+    } catch (e) {
+      setErrorMsg(`Couldn't start the conversation: ${e.message}`)
+      setMessaging(false)
+    }
   }
 
   if (loading) return <div className="mx-auto max-w-4xl px-5 py-16 text-midnight/60">Loading…</div>
+  if (loadError) return <div className="mx-auto max-w-4xl px-5 py-16 text-ruby">Couldn't load this listing: {loadError}</div>
   if (!listing) return <div className="mx-auto max-w-4xl px-5 py-16 text-midnight/60">Listing not found.</div>
 
   return (

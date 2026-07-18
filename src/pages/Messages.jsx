@@ -7,13 +7,14 @@ export default function Messages() {
   const { user } = useAuth()
   const [conversations, setConversations] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     if (!user) return
-    getConversationsForUser(user.uid).then((c) => {
-      setConversations(c)
-      setLoading(false)
-    })
+    getConversationsForUser(user.uid)
+      .then(setConversations)
+      .catch((e) => setError(e.message))
+      .finally(() => setLoading(false))
   }, [user])
 
   return (
@@ -22,6 +23,8 @@ export default function Messages() {
 
       {loading ? (
         <p className="mt-10 text-midnight/60">Loading…</p>
+      ) : error ? (
+        <p className="mt-10 text-ruby">Couldn't load messages: {error}</p>
       ) : conversations.length === 0 ? (
         <p className="mt-10 text-midnight/60">No conversations yet — message an owner from a listing page.</p>
       ) : (

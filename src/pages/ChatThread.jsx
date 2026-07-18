@@ -9,11 +9,13 @@ export default function ChatThread() {
   const [conversation, setConversation] = useState(null)
   const [messages, setMessages] = useState([])
   const [text, setText] = useState('')
+  const [error, setError] = useState('')
   const bottomRef = useRef(null)
 
   useEffect(() => {
-    getConversation(id).then(setConversation)
-    const unsub = listenToMessages(id, setMessages)
+    setError('')
+    getConversation(id).then(setConversation).catch((e) => setError(e.message))
+    const unsub = listenToMessages(id, setMessages, (e) => setError(e.message))
     return unsub
   }, [id])
 
@@ -24,8 +26,13 @@ export default function ChatThread() {
   async function handleSend(e) {
     e.preventDefault()
     if (!text.trim()) return
-    await sendMessage(id, { senderId: user.uid, senderName: profile?.name || user.email, text: text.trim() })
+    const toSend = text.trim()
     setText('')
+    try {
+      await sendMessage(id, { senderId: user.uid, senderName: profile?.name || user.email, text: toSend })
+    } catch (err) {
+      setError(`Couldn't send: ${err.message}`)
+    }
   }
 
   const otherName = conversation && (user.uid === conversation.ownerId ? conversation.renterName : conversation.ownerName)
@@ -35,10 +42,14 @@ export default function ChatThread() {
       <div className="flex items-center gap-3 border-b border-black/10 pb-3">
         <Link to="/messages" className="text-sm text-midnight/50 hover:text-gold">← Back</Link>
         <div>
-          <p className="font-display font-semibold text-midnight">{otherName || '…'}</p>
+          <p className="font-display font-semibold text-midnight">{otherName || (error ? 'Conversation' : '…')}</p>
           {conversation && <p className="text-xs text-midnight/50">{conversation.listingTitle}</p>}
         </div>
       </div>
+
+      {error && (
+        <p className="mt-3 rounded-lg border border-ruby/30 bg-ruby/10 p-3 text-sm text-ruby">{error}</p>
+      )}
 
       <div className="flex-1 space-y-2 overflow-y-auto py-4">
         {messages.map((m) => (

@@ -63,23 +63,26 @@ export default function MyBookings() {
   const { user } = useAuth()
   const [bookings, setBookings] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
   const [reviewedIds, setReviewedIds] = useState({})
   const [openReviewFor, setOpenReviewFor] = useState(null)
 
   useEffect(() => {
     if (!user) return
-    getBookingsForRenter(user.uid).then(async (b) => {
-      setBookings(b)
-      setLoading(false)
-      const completed = b.filter((x) => x.status === 'completed')
-      const flags = {}
-      await Promise.all(
-        completed.map(async (x) => {
-          flags[x.id] = await hasReviewed(x.listingId, x.id)
-        })
-      )
-      setReviewedIds(flags)
-    })
+    getBookingsForRenter(user.uid)
+      .then(async (b) => {
+        setBookings(b)
+        const completed = b.filter((x) => x.status === 'completed')
+        const flags = {}
+        await Promise.all(
+          completed.map(async (x) => {
+            flags[x.id] = await hasReviewed(x.listingId, x.id)
+          })
+        )
+        setReviewedIds(flags)
+      })
+      .catch((e) => setError(e.message))
+      .finally(() => setLoading(false))
   }, [user])
 
   return (
@@ -91,6 +94,8 @@ export default function MyBookings() {
         <div className="mt-10 space-y-3">
           {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-24 w-full" />)}
         </div>
+      ) : error ? (
+        <p className="mt-10 text-ruby">Couldn't load your bookings: {error}</p>
       ) : bookings.length === 0 ? (
         <div className="mt-10 flex flex-col items-center py-10 text-center">
           <span className="text-3xl">🎉</span>
