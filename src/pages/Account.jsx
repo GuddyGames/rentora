@@ -72,6 +72,12 @@ export default function Account() {
         <Row icon="🛒" label="Cart" to="/cart" />
       </div>
 
+      {profile?.isAdmin && (
+        <div className="glass mt-6 rounded-2xl">
+          <Row icon="🛡️" label="Admin control room" to="/admin" />
+        </div>
+      )}
+
       <div className="glass mt-6 rounded-2xl">
         <Row icon="🚪" label="Log out" onClick={handleLogout} danger />
       </div>

@@ -34,11 +34,26 @@ Deploy to Vercel as usual — `vercel --prod`, and add the same env vars in the 
 - **Messaging**: one conversation per (listing, renter) pair, id'd as `{listingId}_{renterId}`. Text-only for now — no photos/voice notes. `src/services/chat.js` handles it with `onSnapshot` for live updates.
 - **Event checklist**: `src/utils/eventChecklist.js` is a rule-of-thumb generator (not a real AI model) — guest count and event type map to suggested categories and quantities. `PlanEvent.jsx` then pulls live average pricing per category from Firestore so the estimate reflects what's actually listed.
 - **Payments**: Paystack Inline JS, loaded via CDN script in `index.html`. A booking is created as `pending` first, then marked `paid`/`confirmed` on successful checkout.
+- **Admin panel** (`/admin`): platform stats, listing moderation (hide/feature/delete any listing), user moderation (restrict/restore accounts), a payments view across every booking, and a disputes queue. Nobody can sign up as admin — it's not a role choice on the signup form. To make yourself admin: open Firebase console → Firestore → `users` collection → find your own user document (matches your auth uid) → add a field `isAdmin` set to boolean `true`. Reload the app and an "Admin control room" row appears in your Account page.
+- **Disputes**: either party can file one from `My Bookings` ("Report an issue") with an optional photo. Admin resolves them from `/admin/disputes`.
+- **Delivery/return photos**: owners can attach a condition photo when marking a booking "delivered" or "returned" from the Dashboard — this is the honest, in-house substitute for a real insurance product. It's documentation, not a payout guarantee.
+- **Featured listings**: admin-only toggle (`/admin/listings`) — no self-serve "boost" purchase flow yet, see below.
+
+- **Delivery location map**: at checkout, "Preview on map" geocodes the typed address via OpenStreetMap's free Nominatim API (no key, no billing) and shows a pin via an OSM embed. This is a static destination pin, not live GPS tracking — there's no vehicle hardware feed behind it, so it shows where delivery is headed, not where it currently is. Both the owner (Dashboard) and renter (My Bookings) can view it per booking.
+
+## Deliberately not built
+
+A few things came up that need real infrastructure or a legal/financial partner before they can be built honestly — building fake versions would mean promising users protections that don't actually exist:
+
+- **Real insurance / theft-damage coverage** — needs an actual underwriting partner. The delivery/return photo system above is the honest stand-in.
+- **Live GPS delivery tracking** (a moving vehicle on a map) — needs physical trackers plus a paid fleet-tracking API (e.g. Verizon Connect); not something to fake in the UI. What's built instead is a static destination-address pin (see above).
+- **Fraud/ML detection, automated chargebacks** — Paystack has its own fraud tooling; layering a custom one on top is a large undertaking on its own.
 
 ## Left for v2
 
 - Photos/voice notes in chat, push/SMS notifications
 - Owner-side coupon management UI
-- Wallet, live delivery GPS tracking, vendor KYC/BVN verification, admin panel — these need real financial/compliance/logistics infrastructure and shouldn't be bolted on casually
+- Self-serve "boost my listing" payment flow (currently admin-only)
+- Wallet, live delivery GPS tracking, vendor KYC/BVN verification — these need real financial/compliance/logistics infrastructure and shouldn't be bolted on casually
 - A Firestore transaction on booking creation to fully close the double-booking race window
 - Native mobile app (this is web-only; works fine as an installable PWA on mobile data in the meantime)

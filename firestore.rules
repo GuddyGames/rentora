@@ -11,28 +11,51 @@ service cloud.firestore {
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'owner';
     }
 
+    function isAdmin() {
+      return isSignedIn() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+
     match /users/{userId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn() && request.auth.uid == userId;
-      allow update: if isSignedIn() && request.auth.uid == userId;
+      // a user can edit their own profile; an admin can only touch the
+      // moderation field (suspended), never impersonate other profile data
+      allow update: if isSignedIn() && (
+        request.auth.uid == userId ||
+        (isAdmin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['suspended']))
+      );
       allow delete: if false;
     }
 
     match /listings/{listingId} {
       allow read: if true; // public catalog
       allow create: if isOwnerRole() && request.resource.data.ownerId == request.auth.uid;
-      allow delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
-      // the owner can update anything; anyone signed in can update ONLY the
-      // rating rollup fields, since that happens from the reviews.js transaction
+      allow delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isAdmin());
+      // the owner can update anything; any signed-in user can update ONLY the
+      // rating rollup fields (from the reviews.js transaction); an admin can
+      // only touch moderation fields (active/featured), not listing content
       allow update: if isSignedIn() && (
         resource.data.ownerId == request.auth.uid ||
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ratingAvg', 'ratingCount'])
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ratingAvg', 'ratingCount']) ||
+        (isAdmin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['active', 'featured']))
       );
     }
 
+    match /disputes/{disputeId} {
+      allow read: if isSignedIn() && (resource.data.filedBy == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && request.resource.data.filedBy == request.auth.uid;
+      allow update: if isAdmin();
+      allow delete: if false;
+    }
+
     match /bookings/{bookingId} {
-      allow read: if isSignedIn() &&
-        (resource.data.renterId == request.auth.uid || resource.data.ownerId == request.auth.uid);
+      // Availability-checking needs to query bookings across all renters for a
+      // given listing (date-range overlap), not just the current user's own —
+      // Firestore rejects that query entirely under a renterId/ownerId-scoped
+      // rule since it can't prove every match satisfies it without fetching
+      // each doc first. So read is open to any signed-in user; write stays locked.
+      allow read: if isSignedIn();
       allow create: if isSignedIn() && request.resource.data.renterId == request.auth.uid;
       // renter can only mark paid/cancel their own; owner can confirm/decline/complete
       allow update: if isSignedIn() &&

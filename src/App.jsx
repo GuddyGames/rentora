@@ -15,6 +15,11 @@ import Messages from './pages/Messages'
 import ChatThread from './pages/ChatThread'
 import PlanEvent from './pages/PlanEvent'
 import Account from './pages/Account'
+import AdminDashboard from './pages/admin/AdminDashboard'
+import AdminListings from './pages/admin/AdminListings'
+import AdminUsers from './pages/admin/AdminUsers'
+import AdminBookings from './pages/admin/AdminBookings'
+import AdminDisputes from './pages/admin/AdminDisputes'
 
 export default function App() {
   return (
@@ -81,6 +86,46 @@ export default function App() {
           element={
             <ProtectedRoute>
               <ChatThread />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute requireAdmin>
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/listings"
+          element={
+            <ProtectedRoute requireAdmin>
+              <AdminListings />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/users"
+          element={
+            <ProtectedRoute requireAdmin>
+              <AdminUsers />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/bookings"
+          element={
+            <ProtectedRoute requireAdmin>
+              <AdminBookings />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/disputes"
+          element={
+            <ProtectedRoute requireAdmin>
+              <AdminDisputes />
             </ProtectedRoute>
           }
         />

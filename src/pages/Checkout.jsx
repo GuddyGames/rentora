@@ -4,7 +4,9 @@ import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
 import { hasConflict, createBooking, markPaid } from '../services/bookings'
 import { getCoupon } from '../services/coupons'
+import { geocodeAddress } from '../utils/geocode'
 import PaymentSuccessOverlay from '../components/PaymentSuccessOverlay'
+import AddressMap from '../components/AddressMap'
 import BackButton from '../components/BackButton'
 
 export default function Checkout() {
@@ -13,6 +15,9 @@ export default function Checkout() {
   const navigate = useNavigate()
 
   const [address, setAddress] = useState('')
+  const [coords, setCoords] = useState(null)
+  const [geocoding, setGeocoding] = useState(false)
+  const [geocodeError, setGeocodeError] = useState('')
   const [couponCode, setCouponCode] = useState('')
   const [couponMsg, setCouponMsg] = useState('')
   const [discountPercent, setDiscountPercent] = useState(0)
@@ -22,6 +27,24 @@ export default function Checkout() {
   const [showSuccess, setShowSuccess] = useState(false)
 
   const discountedTotal = Math.round(total * (1 - discountPercent / 100))
+
+  async function handlePreviewLocation() {
+    setGeocodeError('')
+    setCoords(null)
+    setGeocoding(true)
+    try {
+      const result = await geocodeAddress(address)
+      if (result) {
+        setCoords(result)
+      } else {
+        setGeocodeError("Couldn't find that on the map — you can still check out, just double-check the address is right.")
+      }
+    } catch (e) {
+      setGeocodeError(e.message)
+    } finally {
+      setGeocoding(false)
+    }
+  }
 
   async function handleApplyCoupon() {
     const coupon = await getCoupon(couponCode)
@@ -64,6 +87,9 @@ export default function Checkout() {
           endDate: item.endDate,
           quantity: item.qty,
           totalPrice: Math.round(item.pricePerDay * item.days * item.qty * (1 - discountPercent / 100)) + item.deliveryCost + (item.securityDeposit * item.qty),
+          deliveryAddress: address,
+          deliveryLat: coords?.lat || null,
+          deliveryLon: coords?.lon || null,
         })
         createdBookings.push(ref.id)
       }
@@ -112,12 +138,29 @@ export default function Checkout() {
         Delivery address
         <textarea
           value={address}
-          onChange={(e) => setAddress(e.target.value)}
+          onChange={(e) => { setAddress(e.target.value); setCoords(null); setGeocodeError('') }}
           rows={2}
           placeholder="Where should the equipment be delivered?"
           className="mt-1 w-full rounded-lg border border-black/10 bg-white px-4 py-2.5 text-midnight placeholder:text-midnight/40"
         />
       </label>
+
+      <button
+        type="button"
+        onClick={handlePreviewLocation}
+        disabled={!address.trim() || geocoding}
+        className="mt-2 text-sm text-royal hover:underline disabled:opacity-50"
+      >
+        {geocoding ? 'Looking up…' : '📍 Preview on map'}
+      </button>
+
+      {geocodeError && <p className="mt-1 text-sm text-midnight/50">{geocodeError}</p>}
+      {coords && (
+        <div className="mt-2">
+          <AddressMap lat={coords.lat} lon={coords.lon} label={address} />
+          <p className="mt-1 text-xs text-midnight/50">{coords.displayName}</p>
+        </div>
+      )}
 
       <div className="mt-4 flex gap-2">
         <input

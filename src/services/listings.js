@@ -53,6 +53,7 @@ export async function createListing({ ownerId, ownerName, title, category, descr
     ratingAvg: 0,
     ratingCount: 0,
     active: true,
+    featured: false,
     createdAt: serverTimestamp(),
   })
 }
@@ -76,7 +77,10 @@ export async function getAllListings({ category } = {}) {
     q = query(listingsRef, where('active', '==', true), where('category', '==', category), orderBy('createdAt', 'desc'))
   }
   const snap = await getDocs(q)
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+  const listings = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+  // featured listings first, newest-first within each group — sorted
+  // client-side so this doesn't need its own composite index
+  return listings.sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0))
 }
 
 export async function getListingsByOwner(ownerId) {

@@ -51,7 +51,7 @@ export async function hasConflict(listingId, startDate, endDate) {
   })
 }
 
-export async function createBooking({ listingId, listingTitle, ownerId, renterId, renterName, startDate, endDate, totalPrice, quantity }) {
+export async function createBooking({ listingId, listingTitle, ownerId, renterId, renterName, startDate, endDate, totalPrice, quantity, deliveryAddress, deliveryLat, deliveryLon }) {
   return addDoc(bookingsRef, {
     listingId,
     listingTitle,
@@ -62,14 +62,20 @@ export async function createBooking({ listingId, listingTitle, ownerId, renterId
     endDate,
     totalPrice,
     quantity: quantity || 1,
+    deliveryAddress: deliveryAddress || null,
+    deliveryLat: deliveryLat || null,
+    deliveryLon: deliveryLon || null,
     status: 'pending', // pending -> confirmed -> completed, or cancelled
     paid: false,
     createdAt: serverTimestamp(),
   })
 }
 
-export async function updateBookingStatus(id, status) {
-  return updateDoc(doc(db, 'bookings', id), { status })
+export async function updateBookingStatus(id, status, photoBase64) {
+  const updates = { status }
+  if (status === 'delivered' && photoBase64) updates.deliveryPhotoBase64 = photoBase64
+  if (status === 'returned' && photoBase64) updates.returnPhotoBase64 = photoBase64
+  return updateDoc(doc(db, 'bookings', id), updates)
 }
 
 export async function markPaid(id, reference) {
