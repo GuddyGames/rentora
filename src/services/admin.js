@@ -56,7 +56,7 @@ export async function setListingActive(id, active) {
 // featured listings sort first in Browse/Home — the honest, in-house version
 // of a "promote with us" ad slot, no external ad broker involved
 export async function setListingFeatured(id, featured) {
-  return updateDoc(doc(db, 'listings', id), { featured })
+  return updateDoc(doc(db, 'listings', id), { featured, featuredUntil: featured ? null : 0 })
 }
 
 export async function getAllBookingsAdmin() {

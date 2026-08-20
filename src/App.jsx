@@ -14,6 +14,7 @@ import Checkout from './pages/Checkout'
 import Messages from './pages/Messages'
 import ChatThread from './pages/ChatThread'
 import PlanEvent from './pages/PlanEvent'
+import Pricing from './pages/Pricing'
 import Account from './pages/Account'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminListings from './pages/admin/AdminListings'
@@ -30,6 +31,7 @@ export default function App() {
         <Route path="/browse" element={<Browse />} />
         <Route path="/listing/:id" element={<ListingDetail />} />
         <Route path="/plan" element={<PlanEvent />} />
+        <Route path="/pricing" element={<Pricing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route

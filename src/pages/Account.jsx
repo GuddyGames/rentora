@@ -70,6 +70,7 @@ export default function Account() {
         )}
         <Row icon="💬" label="Messages" to="/messages" />
         <Row icon="🛒" label="Cart" to="/cart" />
+        <Row icon="⭐" label="Pricing & boost" to="/pricing" />
       </div>
 
       {profile?.isAdmin && (

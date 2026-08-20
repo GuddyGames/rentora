@@ -41,6 +41,58 @@ button:active {
   @apply border border-black/5 bg-white shadow-lg shadow-black/5;
 }
 
+/* true frosted glass — iOS-style translucent card, needs a colorful backdrop
+   behind it (see .aurora-bg) to actually read as "glass" rather than grey */
+.ios-glass {
+  @apply border border-white/50 bg-white/25 shadow-xl shadow-black/10 backdrop-blur-2xl;
+}
+.ios-glass-dark {
+  @apply border border-white/15 bg-midnight/30 shadow-xl shadow-black/20 backdrop-blur-2xl;
+}
+
+/* soft drifting color wash behind the glass dashboard */
+.aurora-bg {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(180deg, #eef2ff 0%, #f8fafc 55%, #fdf6e9 100%);
+}
+.aurora-bg::before,
+.aurora-bg::after {
+  content: '';
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(70px);
+  opacity: 0.55;
+  z-index: 0;
+  animation: aurora-drift 22s ease-in-out infinite alternate;
+}
+.aurora-bg::before {
+  top: -10%;
+  left: -10%;
+  width: 55%;
+  height: 55%;
+  background: radial-gradient(circle, #93c5fd, transparent 70%);
+}
+.aurora-bg::after {
+  bottom: -15%;
+  right: -10%;
+  width: 60%;
+  height: 60%;
+  background: radial-gradient(circle, #fcd34d, transparent 70%);
+  animation-delay: -8s;
+}
+.aurora-bg > * {
+  position: relative;
+  z-index: 1;
+}
+@keyframes aurora-drift {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(6%, 8%) scale(1.15); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .aurora-bg::before, .aurora-bg::after { animation: none; }
+}
+
 /* dark surface — reserved for the navbar and the home hero, the one
    cinematic dark moment per the design script */
 .glass-dark {

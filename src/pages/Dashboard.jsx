@@ -53,12 +53,20 @@ export default function Dashboard() {
         <h1 className="font-display text-3xl font-semibold text-midnight">
           Welcome back{profile?.name ? `, ${profile.name}` : ''}
         </h1>
-        <Link
-          to="/add-listing"
-          className="rounded-full bg-gold px-5 py-2.5 font-medium text-midnight transition-all hover:brightness-110"
-        >
-          + List equipment
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            to="/pricing"
+            className="rounded-full border border-black/15 px-5 py-2.5 font-medium text-midnight transition-colors hover:border-gold hover:text-gold"
+          >
+            Boost listings
+          </Link>
+          <Link
+            to="/add-listing"
+            className="rounded-full bg-gold px-5 py-2.5 font-medium text-midnight transition-all hover:brightness-110"
+          >
+            + List equipment
+          </Link>
+        </div>
       </div>
 
       {error && (

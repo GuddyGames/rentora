@@ -37,6 +37,7 @@ export default function Navbar() {
         <nav className="hidden items-center gap-5 font-body text-sm text-midnight/70 md:flex">
           <Link to="/browse" className="hover:text-gold transition-colors">Browse</Link>
           <Link to="/plan" className="hover:text-gold transition-colors">Plan my event</Link>
+          <Link to="/pricing" className="hover:text-gold transition-colors">Pricing</Link>
 
           {user && (
             <Link to="/messages" aria-label="Messages" className="hover:text-gold transition-colors">
@@ -101,6 +102,7 @@ export default function Navbar() {
         <nav className="flex flex-col gap-1 border-t border-black/5 bg-mist px-4 py-3 font-body text-sm text-midnight md:hidden">
           <Link to="/browse" onClick={() => setMenuOpen(false)} className="rounded-lg px-2 py-2.5 hover:bg-black/5">Browse</Link>
           <Link to="/plan" onClick={() => setMenuOpen(false)} className="rounded-lg px-2 py-2.5 hover:bg-black/5">Plan my event</Link>
+          <Link to="/pricing" onClick={() => setMenuOpen(false)} className="rounded-lg px-2 py-2.5 hover:bg-black/5">Pricing</Link>
           {user ? (
             <>
               <Link to="/messages" onClick={() => setMenuOpen(false)} className="rounded-lg px-2 py-2.5 hover:bg-black/5">Messages</Link>

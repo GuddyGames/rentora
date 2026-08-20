@@ -1,10 +1,14 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { EVENT_TYPES, generateChecklist } from '../utils/eventChecklist'
-import { getAllListings } from '../services/listings'
+import { getAllListings, CATEGORIES } from '../services/listings'
 import BackButton from '../components/BackButton'
 
 const STEPS = ['type', 'guests', 'setting', 'budget', 'result']
+
+function categoryIcon(name) {
+  return CATEGORIES.find((c) => c.name === name)?.icon || '📦'
+}
 
 export default function PlanEvent() {
   const [searchParams] = useSearchParams()
@@ -16,6 +20,8 @@ export default function PlanEvent() {
   const [thinking, setThinking] = useState(false)
   const [checklist, setChecklist] = useState(null)
   const [buildError, setBuildError] = useState('')
+  const [customName, setCustomName] = useState('')
+  const [customQty, setCustomQty] = useState(1)
 
   // arriving from a Home event-type card pre-selects the type and skips ahead
   useEffect(() => {
@@ -62,6 +68,41 @@ export default function PlanEvent() {
   const total = checklist ? checklist.reduce((sum, i) => sum + (i.avgPrice ? i.avgPrice * i.quantity : 0), 0) : 0
   const budgetNum = Number(budget) || 0
   const overBudget = budgetNum > 0 && total > budgetNum
+
+  function setQty(category, qty) {
+    setChecklist((prev) => prev.map((i) => (i.category === category ? { ...i, quantity: Math.max(1, qty) } : i)))
+  }
+
+  function removeItem(category) {
+    setChecklist((prev) => prev.filter((i) => i.category !== category))
+  }
+
+  async function addCustomItem(e) {
+    e.preventDefault()
+    const name = customName.trim()
+    if (!name) return
+    if (checklist?.some((i) => i.category.toLowerCase() === name.toLowerCase())) {
+      setCustomName('')
+      return
+    }
+    // if it happens to match a real category, price it the same way the
+    // auto-generated items are priced; otherwise it's just a personal to-do
+    const matched = CATEGORIES.find((c) => c.name.toLowerCase() === name.toLowerCase())
+    let avgPrice = null
+    let listingCount = 0
+    if (matched) {
+      try {
+        const listings = await getAllListings({ category: matched.name })
+        listingCount = listings.length
+        avgPrice = listings.length ? listings.reduce((sum, l) => sum + l.pricePerDay, 0) / listings.length : null
+      } catch {
+        // fine, it just shows as an unpriced custom item
+      }
+    }
+    setChecklist((prev) => [...prev, { category: matched ? matched.name : name, quantity: customQty, avgPrice, listingCount, custom: true }])
+    setCustomName('')
+    setCustomQty(1)
+  }
 
   const step = STEPS[stepIdx]
 
@@ -194,29 +235,84 @@ export default function PlanEvent() {
           ) : checklist ? (
             <div className="animate-pop-in">
               <h2 className="font-display text-xl font-semibold text-midnight">Here's what you'll need</h2>
+              <p className="mt-1 text-xs text-muted">Adjust quantities, remove what you don't need, or add your own.</p>
               <div className="mt-4 space-y-2">
                 {checklist.map((item, i) => (
                   <div
                     key={item.category}
-                    className="glass flex items-center justify-between rounded-2xl p-4"
+                    className="glass flex items-center justify-between gap-3 rounded-2xl p-4"
                     style={{ animationDelay: `${i * 60}ms` }}
                   >
-                    <div>
-                      <Link to={`/browse?category=${encodeURIComponent(item.category)}`} className="font-display font-semibold text-midnight hover:text-gold">
-                        {item.category}
-                      </Link>
-                      <p className="text-sm text-muted">Qty: {item.quantity}</p>
+                    <div className="flex min-w-0 items-center gap-3">
+                      <span className="text-xl">{categoryIcon(item.category)}</span>
+                      <div className="min-w-0">
+                        {CATEGORIES.some((c) => c.name === item.category) ? (
+                          <Link to={`/browse?category=${encodeURIComponent(item.category)}`} className="truncate font-display font-semibold text-midnight hover:text-gold">
+                            {item.category}
+                          </Link>
+                        ) : (
+                          <p className="truncate font-display font-semibold text-midnight">{item.category}</p>
+                        )}
+                        <div className="mt-1 flex items-center gap-1.5">
+                          <button
+                            onClick={() => setQty(item.category, item.quantity - 1)}
+                            className="flex h-6 w-6 items-center justify-center rounded-full border border-black/10 text-midnight/60 hover:border-gold hover:text-gold"
+                          >
+                            −
+                          </button>
+                          <span className="w-6 text-center font-mono text-sm text-midnight">{item.quantity}</span>
+                          <button
+                            onClick={() => setQty(item.category, item.quantity + 1)}
+                            className="flex h-6 w-6 items-center justify-center rounded-full border border-black/10 text-midnight/60 hover:border-gold hover:text-gold"
+                          >
+                            +
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-right text-sm">
-                      {item.avgPrice ? (
-                        <p className="font-mono text-midnight/80">~₦{Math.round(item.avgPrice * item.quantity).toLocaleString()}</p>
-                      ) : (
-                        <p className="text-muted">Nothing listed yet</p>
-                      )}
+                    <div className="flex shrink-0 items-center gap-3">
+                      <div className="text-right text-sm">
+                        {item.avgPrice ? (
+                          <p className="font-mono text-midnight/80">~₦{Math.round(item.avgPrice * item.quantity).toLocaleString()}</p>
+                        ) : (
+                          <p className="text-muted">{item.custom ? 'Personal item' : 'Nothing listed yet'}</p>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => removeItem(item.category)}
+                        aria-label={`Remove ${item.category}`}
+                        className="text-midnight/30 hover:text-ruby"
+                      >
+                        ✕
+                      </button>
                     </div>
                   </div>
                 ))}
               </div>
+
+              <form onSubmit={addCustomItem} className="glass mt-3 flex items-center gap-2 rounded-2xl p-3">
+                <input
+                  type="text"
+                  value={customName}
+                  onChange={(e) => setCustomName(e.target.value)}
+                  placeholder="Add something else — photographer, cake, MC…"
+                  className="min-w-0 flex-1 bg-transparent text-sm text-midnight placeholder:text-muted focus:outline-none"
+                />
+                <input
+                  type="number"
+                  min="1"
+                  value={customQty}
+                  onChange={(e) => setCustomQty(Math.max(1, Number(e.target.value)))}
+                  className="w-14 rounded-lg border border-black/10 bg-white px-2 py-1 text-center text-sm text-midnight"
+                />
+                <button
+                  type="submit"
+                  disabled={!customName.trim()}
+                  className="shrink-0 rounded-full bg-midnight px-3 py-1.5 text-sm font-medium text-gold disabled:opacity-40"
+                >
+                  + Add
+                </button>
+              </form>
 
               <div className={`mt-4 flex justify-between rounded-2xl border p-4 font-mono ${
                 overBudget ? 'border-ruby/40 bg-ruby/10' : 'border-emerald/40 bg-emerald/10'

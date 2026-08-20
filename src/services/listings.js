@@ -54,6 +54,7 @@ export async function createListing({ ownerId, ownerName, title, category, descr
     ratingCount: 0,
     active: true,
     featured: false,
+    featuredUntil: null,
     createdAt: serverTimestamp(),
   })
 }
@@ -79,8 +80,10 @@ export async function getAllListings({ category } = {}) {
   const snap = await getDocs(q)
   const listings = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
   // featured listings first, newest-first within each group — sorted
-  // client-side so this doesn't need its own composite index
-  return listings.sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0))
+  // client-side so this doesn't need its own composite index. A boost that's
+  // past its featuredUntil date no longer counts as featured.
+  const isFeatured = (l) => l.featured && (!l.featuredUntil || l.featuredUntil > Date.now())
+  return listings.sort((a, b) => (isFeatured(b) ? 1 : 0) - (isFeatured(a) ? 1 : 0))
 }
 
 export async function getListingsByOwner(ownerId) {
