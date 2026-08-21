@@ -1,9 +1,9 @@
 import {
   collection,
-  addDoc,
+  setDoc,
+  getDoc,
   getDocs,
   query,
-  where,
   orderBy,
   serverTimestamp,
   doc,
@@ -12,11 +12,16 @@ import {
 import { db } from '../firebase'
 
 // Reviews live in a subcollection under each listing: listings/{id}/reviews/{reviewId}
+// — the review's document ID is always the bookingId. That's not just a
+// convention: the security rule requires it, both to verify (via get()) that
+// this booking is real, completed, and belongs to this renter, and to make a
+// second review attempt on the same booking a rules-level "update" (denied)
+// rather than a fresh "create".
 export async function addReview({ listingId, bookingId, renterId, renterName, rating, text }) {
-  const reviewsRef = collection(db, 'listings', listingId, 'reviews')
+  const reviewRef = doc(db, 'listings', listingId, 'reviews', bookingId)
   const listingRef = doc(db, 'listings', listingId)
 
-  await addDoc(reviewsRef, {
+  await setDoc(reviewRef, {
     bookingId,
     renterId,
     renterName,
@@ -46,7 +51,6 @@ export async function getReviewsForListing(listingId) {
 
 // so a renter only sees "leave a review" on bookings they haven't reviewed yet
 export async function hasReviewed(listingId, bookingId) {
-  const q = query(collection(db, 'listings', listingId, 'reviews'), where('bookingId', '==', bookingId))
-  const snap = await getDocs(q)
-  return !snap.empty
+  const snap = await getDoc(doc(db, 'listings', listingId, 'reviews', bookingId))
+  return snap.exists()
 }

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { sendEmailVerification } from 'firebase/auth'
 import { useAuth } from '../context/AuthContext'
 import BackButton from '../components/BackButton'
 
@@ -24,6 +25,20 @@ export default function Account() {
   const { user, profile, logout } = useAuth()
   const navigate = useNavigate()
   const [notifications, setNotifications] = useState(true)
+  const [resendBusy, setResendBusy] = useState(false)
+  const [resendSent, setResendSent] = useState(false)
+
+  async function handleResendVerification() {
+    setResendBusy(true)
+    try {
+      await sendEmailVerification(user)
+      setResendSent(true)
+    } catch {
+      // Firebase rate-limits this — fine to just quietly no-op
+    } finally {
+      setResendBusy(false)
+    }
+  }
 
   async function handleLogout() {
     await logout()
@@ -47,6 +62,19 @@ export default function Account() {
           <p className="mt-0.5 text-xs uppercase tracking-wide text-gold">{profile?.role}</p>
         </div>
       </div>
+
+      {!user.emailVerified && (
+        <div className="glass mt-6 rounded-2xl border border-gold/30 bg-gold/5 p-4">
+          <p className="text-sm text-midnight">Your email isn't verified yet.</p>
+          {resendSent ? (
+            <p className="mt-1 text-sm text-emerald">Sent — check your inbox (and spam folder).</p>
+          ) : (
+            <button onClick={handleResendVerification} disabled={resendBusy} className="mt-1 text-sm text-royal hover:underline disabled:opacity-60">
+              {resendBusy ? 'Sending…' : 'Resend verification email'}
+            </button>
+          )}
+        </div>
+      )}
 
       <div className="glass mt-6 divide-y divide-black/10 rounded-2xl">
         <div className="flex items-center justify-between px-4 py-4">
