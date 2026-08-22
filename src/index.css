@@ -53,32 +53,33 @@ button:active {
 /* soft drifting color wash behind the glass dashboard */
 .aurora-bg {
   position: relative;
-  overflow: hidden;
-  background: linear-gradient(180deg, #eef2ff 0%, #f8fafc 55%, #fdf6e9 100%);
+  background: linear-gradient(180deg, #eef2ff 0%, #fdf6e0 45%, #fdf0d0 100%);
 }
 .aurora-bg::before,
-.aurora-bg::after {
+.aurora-bg::after,
+.aurora-bg .aurora-mid {
   content: '';
-  position: absolute;
+  position: fixed;
   border-radius: 9999px;
   filter: blur(70px);
-  opacity: 0.55;
+  opacity: 0.6;
   z-index: 0;
+  pointer-events: none;
   animation: aurora-drift 22s ease-in-out infinite alternate;
 }
 .aurora-bg::before {
   top: -10%;
   left: -10%;
-  width: 55%;
-  height: 55%;
+  width: 45vw;
+  height: 45vw;
   background: radial-gradient(circle, #93c5fd, transparent 70%);
 }
 .aurora-bg::after {
-  bottom: -15%;
+  bottom: -10%;
   right: -10%;
-  width: 60%;
-  height: 60%;
-  background: radial-gradient(circle, #fcd34d, transparent 70%);
+  width: 50vw;
+  height: 50vw;
+  background: radial-gradient(circle, #f5c945, transparent 70%);
   animation-delay: -8s;
 }
 .aurora-bg > * {

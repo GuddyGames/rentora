@@ -2,24 +2,8 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
-
-function ChatIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5c-1.35 0-2.62-.32-3.73-.9L3 20l1.06-4.24A8.46 8.46 0 0 1 3 11.5 8.5 8.5 0 0 1 11.5 3 8.5 8.5 0 0 1 21 11.5Z" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
-}
-
-function CartIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
-      <circle cx="9" cy="21" r="1" />
-      <circle cx="20" cy="21" r="1" />
-      <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
-}
+import { ChatIcon, CartIcon } from './icons'
+import NotificationBell from './NotificationBell'
 
 export default function Navbar() {
   const { user, profile } = useAuth()
@@ -41,11 +25,12 @@ export default function Navbar() {
 
           {user && (
             <Link to="/messages" aria-label="Messages" className="hover:text-gold transition-colors">
-              <ChatIcon />
+              <ChatIcon className="h-5 w-5" />
             </Link>
           )}
+          {user && <NotificationBell />}
           <Link to="/cart" aria-label="Cart" className="relative hover:text-gold transition-colors">
-            <CartIcon />
+            <CartIcon className="h-5 w-5" />
             {items.length > 0 && (
               <span className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-royal text-[10px] font-semibold text-white">
                 {items.length}
@@ -71,10 +56,11 @@ export default function Navbar() {
           )}
         </nav>
 
-        {/* mobile: cart badge + hamburger */}
+        {/* mobile: bell + cart + hamburger */}
         <div className="flex items-center gap-1 md:hidden">
+          {user && <NotificationBell />}
           <Link to="/cart" aria-label="Cart" className="relative rounded-full p-2 text-midnight/70 hover:text-gold">
-            <CartIcon />
+            <CartIcon className="h-5 w-5" />
             {items.length > 0 && (
               <span className="absolute right-0.5 top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-royal text-[10px] font-semibold text-white">
                 {items.length}

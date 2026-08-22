@@ -29,7 +29,8 @@ export default function Dashboard() {
   }, [user])
 
   async function handleStatus(id, status) {
-    await updateBookingStatus(id, status, pendingPhoto[id])
+    const booking = bookings.find((b) => b.id === id)
+    await updateBookingStatus(booking, status, pendingPhoto[id])
     setBookings((prev) => prev.map((b) => (b.id === id ? { ...b, status } : b)))
     setPendingPhoto((prev) => ({ ...prev, [id]: null }))
   }

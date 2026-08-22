@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from 'react'
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -9,83 +9,83 @@ import {
   signOut,
   sendEmailVerification,
   sendPasswordResetEmail,
-} from "firebase/auth";
-import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
-import { auth, db } from "../firebase";
+} from 'firebase/auth'
+import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
+import { auth, db } from '../firebase'
 
-const AuthContext = createContext(null);
+const AuthContext = createContext(null)
 
 export function useAuth() {
-  return useContext(AuthContext);
+  return useContext(AuthContext)
 }
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null)
+  const [profile, setProfile] = useState(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     // handle Google redirect result on load (more reliable than popup on flaky mobile data)
-    getRedirectResult(auth).catch((err) =>
-      console.error("redirect sign-in error", err),
-    );
+    getRedirectResult(auth).catch((err) => console.error('redirect sign-in error', err))
 
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
-      setUser(firebaseUser);
+      setUser(firebaseUser)
       if (firebaseUser) {
-        const snap = await getDoc(doc(db, "users", firebaseUser.uid));
-        setProfile(snap.exists() ? snap.data() : null);
+        const snap = await getDoc(doc(db, 'users', firebaseUser.uid))
+        setProfile(snap.exists() ? snap.data() : null)
       } else {
-        setProfile(null);
+        setProfile(null)
       }
-      setLoading(false);
-    });
-    return unsub;
-  }, []);
+      setLoading(false)
+    })
+    return unsub
+  }, [])
+
+  // Lightweight presence: while the app is open, ping lastActiveAt every 60s.
+  // This gives the admin panel an "active in the last couple minutes" signal
+  // — it's an approximation (no instant online/offline via a disconnect
+  // hook, which would need Firebase Realtime Database), but it's honest
+  // about what it actually measures.
+  useEffect(() => {
+    if (!user) return
+    const ping = () => updateDoc(doc(db, 'users', user.uid), { lastActiveAt: serverTimestamp() }).catch(() => {})
+    ping()
+    const interval = setInterval(ping, 60000)
+    return () => clearInterval(interval)
+  }, [user])
 
   async function signup({ name, email, password, role }) {
-    const cred = await createUserWithEmailAndPassword(auth, email, password);
+    const cred = await createUserWithEmailAndPassword(auth, email, password)
     const userDoc = {
       name,
       email,
       role, // 'renter' | 'owner'
       createdAt: serverTimestamp(),
-    };
-    await setDoc(doc(db, "users", cred.user.uid), userDoc);
-    setProfile(userDoc);
-    sendEmailVerification(cred.user).catch((err) =>
-      console.error("verification email failed", err),
-    );
-    return cred.user;
+    }
+    await setDoc(doc(db, 'users', cred.user.uid), userDoc)
+    setProfile(userDoc)
+    sendEmailVerification(cred.user).catch((err) => console.error('verification email failed', err))
+    return cred.user
   }
 
   function login(email, password) {
-    return signInWithEmailAndPassword(auth, email, password);
+    return signInWithEmailAndPassword(auth, email, password)
   }
 
   function loginWithGoogle() {
-    const provider = new GoogleAuthProvider();
-    return signInWithRedirect(auth, provider);
+    const provider = new GoogleAuthProvider()
+    return signInWithRedirect(auth, provider)
   }
 
   function resetPassword(email) {
-    return sendPasswordResetEmail(auth, email);
+    return sendPasswordResetEmail(auth, email)
   }
 
   function logout() {
-    return signOut(auth);
+    return signOut(auth)
   }
 
-  const value = {
-    user,
-    profile,
-    loading,
-    signup,
-    login,
-    loginWithGoogle,
-    resetPassword,
-    logout,
-  };
+  const value = { user, profile, loading, signup, login, loginWithGoogle, resetPassword, logout }
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

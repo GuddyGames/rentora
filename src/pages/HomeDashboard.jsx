@@ -6,6 +6,7 @@ import { getAllListings, getListingsByOwner } from '../services/listings'
 import { getBookingsForRenter, getBookingsForOwner } from '../services/bookings'
 import ListingCard from '../components/ListingCard'
 import Skeleton from '../components/Skeleton'
+import { SearchIcon, SparkleIcon, CartIcon, DashboardIcon, CalendarIcon, StarIcon } from '../components/icons'
 
 function greeting() {
   const hour = new Date().getHours()
@@ -20,7 +21,9 @@ function GlassTile({ to, icon, label, sub, dark }) {
       to={to}
       className={`${dark ? 'ios-glass-dark text-white' : 'ios-glass text-midnight'} flex flex-col items-start gap-2 rounded-3xl p-5 transition-transform duration-200 hover:-translate-y-1`}
     >
-      <span className="text-2xl">{icon}</span>
+      <span className={`flex h-9 w-9 items-center justify-center rounded-full ${dark ? 'bg-white/15' : 'bg-black/5'}`}>
+        {icon}
+      </span>
       <span className="font-display text-base font-semibold">{label}</span>
       {sub && <span className={`text-xs ${dark ? 'text-white/70' : 'text-midnight/60'}`}>{sub}</span>}
     </Link>
@@ -81,10 +84,7 @@ export default function HomeDashboard() {
           </h1>
           <form onSubmit={handleSearch} className="mt-6 max-w-xl">
             <div className="ios-glass-dark flex items-center gap-3 rounded-full px-5 py-3.5">
-              <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0 text-white/70" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="11" cy="11" r="7" />
-                <path d="M21 21l-4.3-4.3" strokeLinecap="round" />
-              </svg>
+              <SearchIcon className="h-5 w-5 shrink-0 text-white/70" />
               <input
                 name="search"
                 type="text"
@@ -97,13 +97,13 @@ export default function HomeDashboard() {
 
         {/* quick actions */}
         <div className="mt-5 grid grid-cols-2 gap-4 md:grid-cols-4">
-          <GlassTile to="/browse" icon="🔍" label="Browse" sub="Find equipment" />
-          <GlassTile to="/plan" icon="✨" label="Plan my event" sub="Get a checklist" dark />
-          <GlassTile to="/cart" icon="🛒" label="Cart" sub={items.length ? `${items.length} item${items.length > 1 ? 's' : ''}` : 'Empty'} />
+          <GlassTile to="/browse" icon={<SearchIcon className="h-5 w-5" />} label="Browse" sub="Find equipment" />
+          <GlassTile to="/plan" icon={<SparkleIcon className="h-5 w-5" />} label="Plan my event" sub="Get a checklist" dark />
+          <GlassTile to="/cart" icon={<CartIcon className="h-5 w-5" />} label="Cart" sub={items.length ? `${items.length} item${items.length > 1 ? 's' : ''}` : 'Empty'} />
           {isOwner ? (
-            <GlassTile to="/dashboard" icon="📦" label="Dashboard" sub={ownerStats ? `${ownerStats.pending} pending` : '…'} dark />
+            <GlassTile to="/dashboard" icon={<DashboardIcon className="h-5 w-5" />} label="Dashboard" sub={ownerStats ? `${ownerStats.pending} pending` : '…'} dark />
           ) : (
-            <GlassTile to="/my-bookings" icon="📅" label="My bookings" sub={upcoming ? '1 upcoming' : 'None yet'} dark />
+            <GlassTile to="/my-bookings" icon={<CalendarIcon className="h-5 w-5" />} label="My bookings" sub={upcoming ? '1 upcoming' : 'None yet'} dark />
           )}
         </div>
 
@@ -113,7 +113,7 @@ export default function HomeDashboard() {
             className="ios-glass-dark mt-4 flex items-center justify-between rounded-3xl p-5 text-white transition-transform hover:-translate-y-0.5"
           >
             <span>
-              <span className="font-display text-lg font-semibold">Boost your listings ★</span>
+              <span className="font-display text-lg font-semibold inline-flex items-center gap-1.5">Boost your listings <StarIcon className="h-4 w-4 text-gold" /></span>
               <span className="ml-2 text-sm text-white/70">Get featured placement in Browse</span>
             </span>
             <span className="text-white/70">→</span>

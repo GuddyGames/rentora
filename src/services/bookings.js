@@ -10,6 +10,7 @@ import {
   serverTimestamp,
 } from 'firebase/firestore'
 import { db } from '../firebase'
+import { createNotification } from './notifications'
 
 const bookingsRef = collection(db, 'bookings')
 
@@ -52,7 +53,7 @@ export async function hasConflict(listingId, startDate, endDate) {
 }
 
 export async function createBooking({ listingId, listingTitle, ownerId, renterId, renterName, startDate, endDate, totalPrice, quantity, deliveryAddress, deliveryLat, deliveryLon }) {
-  return addDoc(bookingsRef, {
+  const ref = await addDoc(bookingsRef, {
     listingId,
     listingTitle,
     ownerId,
@@ -69,17 +70,53 @@ export async function createBooking({ listingId, listingTitle, ownerId, renterId
     paid: false,
     createdAt: serverTimestamp(),
   })
+
+  createNotification({
+    userId: ownerId,
+    type: 'booking_placed',
+    title: 'New booking request',
+    body: `${renterName} wants to book "${listingTitle}" for ${startDate} → ${endDate}.`,
+    link: '/dashboard',
+  }).catch((e) => console.error('notification failed', e))
+
+  return ref
 }
 
-export async function updateBookingStatus(id, status, photoBase64) {
+export async function updateBookingStatus(booking, status, photoBase64) {
   const updates = { status }
   if (status === 'delivered' && photoBase64) updates.deliveryPhotoBase64 = photoBase64
   if (status === 'returned' && photoBase64) updates.returnPhotoBase64 = photoBase64
-  return updateDoc(doc(db, 'bookings', id), updates)
+  await updateDoc(doc(db, 'bookings', booking.id), updates)
+
+  if (status === 'confirmed') {
+    createNotification({
+      userId: booking.renterId,
+      type: 'booking_confirmed',
+      title: 'Booking confirmed',
+      body: `Your booking for "${booking.listingTitle}" was confirmed.`,
+      link: '/my-bookings',
+    }).catch((e) => console.error('notification failed', e))
+  }
+  if (status === 'delivered') {
+    createNotification({
+      userId: booking.renterId,
+      type: 'booking_delivered',
+      title: 'Delivered',
+      body: `"${booking.listingTitle}" has reached your delivery address.`,
+      link: '/my-bookings',
+    }).catch((e) => console.error('notification failed', e))
+  }
 }
 
-export async function markPaid(id, reference) {
-  return updateDoc(doc(db, 'bookings', id), { paid: true, paymentReference: reference, status: 'confirmed' })
+export async function markPaid(booking, reference) {
+  await updateDoc(doc(db, 'bookings', booking.id), { paid: true, paymentReference: reference, status: 'confirmed' })
+  createNotification({
+    userId: booking.ownerId,
+    type: 'payment_received',
+    title: 'Payment received',
+    body: `Payment confirmed for "${booking.listingTitle}" — ₦${Number(booking.totalPrice).toLocaleString()}.`,
+    link: '/dashboard',
+  }).catch((e) => console.error('notification failed', e))
 }
 
 export async function getBookingsForRenter(renterId) {

@@ -3,6 +3,16 @@ import { Link, useNavigate } from 'react-router-dom'
 import { sendEmailVerification } from 'firebase/auth'
 import { useAuth } from '../context/AuthContext'
 import BackButton from '../components/BackButton'
+import { DashboardIcon, CalendarIcon, ChatIcon, CartIcon, StarIcon, ShieldIcon, BellIcon } from '../components/icons'
+
+function LogoutIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <path d="M16 17l5-5-5-5M21 12H9" />
+    </svg>
+  )
+}
 
 function Row({ icon, label, to, onClick, danger }) {
   const className = `flex items-center justify-between rounded-2xl px-4 py-4 transition-colors ${
@@ -11,7 +21,7 @@ function Row({ icon, label, to, onClick, danger }) {
   const content = (
     <>
       <span className="flex items-center gap-3">
-        <span className="text-lg">{icon}</span>
+        <span className="flex h-5 w-5 items-center justify-center">{icon}</span>
         <span className="font-medium">{label}</span>
       </span>
       {!danger && <span className="text-midnight/40">›</span>}
@@ -79,7 +89,7 @@ export default function Account() {
       <div className="glass mt-6 divide-y divide-black/10 rounded-2xl">
         <div className="flex items-center justify-between px-4 py-4">
           <span className="flex items-center gap-3 text-midnight">
-            <span className="text-lg">🔔</span>
+            <span className="flex h-5 w-5 items-center justify-center"><BellIcon className="h-5 w-5" /></span>
             <span className="font-medium">Notifications</span>
           </span>
           <button
@@ -92,23 +102,23 @@ export default function Account() {
         </div>
 
         {profile?.role === 'owner' ? (
-          <Row icon="📦" label="Dashboard & listings" to="/dashboard" />
+          <Row icon={<DashboardIcon className="h-5 w-5" />} label="Dashboard & listings" to="/dashboard" />
         ) : (
-          <Row icon="📅" label="My bookings" to="/my-bookings" />
+          <Row icon={<CalendarIcon className="h-5 w-5" />} label="My bookings" to="/my-bookings" />
         )}
-        <Row icon="💬" label="Messages" to="/messages" />
-        <Row icon="🛒" label="Cart" to="/cart" />
-        <Row icon="⭐" label="Pricing & boost" to="/pricing" />
+        <Row icon={<ChatIcon className="h-5 w-5" />} label="Messages" to="/messages" />
+        <Row icon={<CartIcon className="h-5 w-5" />} label="Cart" to="/cart" />
+        <Row icon={<StarIcon className="h-5 w-5 text-gold" />} label="Pricing & boost" to="/pricing" />
       </div>
 
       {profile?.isAdmin && (
         <div className="glass mt-6 rounded-2xl">
-          <Row icon="🛡️" label="Admin control room" to="/admin" />
+          <Row icon={<ShieldIcon className="h-5 w-5" />} label="Admin control room" to="/admin" />
         </div>
       )}
 
       <div className="glass mt-6 rounded-2xl">
-        <Row icon="🚪" label="Log out" onClick={handleLogout} danger />
+        <Row icon={<LogoutIcon className="h-5 w-5" />} label="Log out" onClick={handleLogout} danger />
       </div>
     </div>
   )

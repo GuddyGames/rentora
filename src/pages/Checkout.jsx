@@ -91,7 +91,12 @@ export default function Checkout() {
           deliveryLat: coords?.lat || null,
           deliveryLon: coords?.lon || null,
         })
-        createdBookings.push(ref.id)
+        createdBookings.push({
+          id: ref.id,
+          ownerId: item.ownerId,
+          listingTitle: item.title,
+          totalPrice: Math.round(item.pricePerDay * item.days * item.qty * (1 - discountPercent / 100)) + item.deliveryCost + (item.securityDeposit * item.qty),
+        })
       }
 
       if (window.PaystackPop && import.meta.env.VITE_PAYSTACK_PUBLIC_KEY) {
@@ -100,9 +105,9 @@ export default function Checkout() {
           email: user.email,
           amount: discountedTotal * 100,
           currency: 'NGN',
-          ref: createdBookings[0],
+          ref: createdBookings[0].id,
           callback: () => {
-            Promise.all(createdBookings.map((id) => markPaid(id, createdBookings[0]))).then(() => {
+            Promise.all(createdBookings.map((b) => markPaid(b, createdBookings[0].id))).then(() => {
               clearCart()
               setShowSuccess(true)
             })

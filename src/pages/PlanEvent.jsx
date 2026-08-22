@@ -5,32 +5,62 @@ import { getAllListings, CATEGORIES } from '../services/listings'
 import BackButton from '../components/BackButton'
 
 const STEPS = ['type', 'guests', 'setting', 'budget', 'result']
+const STORAGE_KEY = 'rentora_plan_event'
 
 function categoryIcon(name) {
   return CATEGORIES.find((c) => c.name === name)?.icon || '📦'
 }
 
+function loadSaved() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    return raw ? JSON.parse(raw) : null
+  } catch {
+    return null
+  }
+}
+
 export default function PlanEvent() {
   const [searchParams] = useSearchParams()
-  const [stepIdx, setStepIdx] = useState(0)
-  const [eventType, setEventType] = useState('')
-  const [guests, setGuests] = useState('')
-  const [setting, setSetting] = useState('')
-  const [budget, setBudget] = useState('')
+  const saved = loadSaved()
+  const [stepIdx, setStepIdx] = useState(saved?.stepIdx ?? 0)
+  const [eventType, setEventType] = useState(saved?.eventType ?? '')
+  const [guests, setGuests] = useState(saved?.guests ?? '')
+  const [setting, setSetting] = useState(saved?.setting ?? '')
+  const [budget, setBudget] = useState(saved?.budget ?? '')
   const [thinking, setThinking] = useState(false)
-  const [checklist, setChecklist] = useState(null)
+  const [checklist, setChecklist] = useState(saved?.checklist ?? null)
   const [buildError, setBuildError] = useState('')
   const [customName, setCustomName] = useState('')
   const [customQty, setCustomQty] = useState(1)
 
-  // arriving from a Home event-type card pre-selects the type and skips ahead
+  // arriving from a Home event-type card pre-selects the type and skips ahead,
+  // overriding anything saved so a fresh start always wins
   useEffect(() => {
     const preset = searchParams.get('type')
     if (preset && EVENT_TYPES.some((t) => t.id === preset)) {
       setEventType(preset)
       setStepIdx(1)
+      setChecklist(null)
     }
   }, [searchParams])
+
+  // save progress as they go, so leaving the page and coming back doesn't
+  // lose it — this is local to the device/browser, not synced anywhere
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ stepIdx, eventType, guests, setting, budget, checklist }))
+  }, [stepIdx, eventType, guests, setting, budget, checklist])
+
+  function startOver() {
+    localStorage.removeItem(STORAGE_KEY)
+    setStepIdx(0)
+    setEventType('')
+    setGuests('')
+    setSetting('')
+    setBudget('')
+    setChecklist(null)
+    setBuildError('')
+  }
 
   function goTo(idx) {
     setStepIdx(idx)
@@ -234,8 +264,11 @@ export default function PlanEvent() {
             </div>
           ) : checklist ? (
             <div className="animate-pop-in">
-              <h2 className="font-display text-xl font-semibold text-midnight">Here's what you'll need</h2>
-              <p className="mt-1 text-xs text-muted">Adjust quantities, remove what you don't need, or add your own.</p>
+              <div className="flex items-center justify-between">
+                <h2 className="font-display text-xl font-semibold text-midnight">Here's what you'll need</h2>
+                <button onClick={startOver} className="text-xs text-midnight/40 hover:text-ruby">Start over</button>
+              </div>
+              <p className="mt-1 text-xs text-muted">Adjust quantities, remove what you don't need, or add your own. Your progress here is saved automatically.</p>
               <div className="mt-4 space-y-2">
                 {checklist.map((item, i) => (
                   <div

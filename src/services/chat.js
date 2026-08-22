@@ -38,6 +38,31 @@ export async function getOrCreateConversation({ listingId, listingTitle, ownerId
   return id
 }
 
+// Admin support conversations reuse the same owner/renter "slot" fields
+// purely as generic participant-A/participant-B labels — that's what lets
+// the existing Messages/ChatThread UI display these with zero changes,
+// since they just ask "which of these two names isn't me".
+export async function getOrCreateAdminConversation({ adminId, adminName, targetUserId, targetUserName }) {
+  const id = `admin_${targetUserId}`
+  const ref = doc(db, 'conversations', id)
+  const snap = await getDoc(ref)
+  if (!snap.exists()) {
+    await setDoc(ref, {
+      listingId: null,
+      listingTitle: 'Rentora support',
+      ownerId: adminId,
+      ownerName: adminName,
+      renterId: targetUserId,
+      renterName: targetUserName,
+      isAdminConversation: true,
+      participantIds: [adminId, targetUserId],
+      lastMessage: '',
+      lastMessageAt: serverTimestamp(),
+    })
+  }
+  return id
+}
+
 export async function sendMessage(conversationId, { senderId, senderName, text }) {
   const messagesRef = collection(db, 'conversations', conversationId, 'messages')
   await addDoc(messagesRef, {
