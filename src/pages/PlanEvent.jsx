@@ -3,12 +3,20 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { EVENT_TYPES, generateChecklist } from '../utils/eventChecklist'
 import { getAllListings, CATEGORIES } from '../services/listings'
 import BackButton from '../components/BackButton'
+import { CATEGORY_ICONS, EVENT_ICONS } from '../components/iconMap'
+import { OutdoorIcon, IndoorIcon } from '../components/domainIcons'
+import { SparkleIcon, BackIcon } from '../components/icons'
 
 const STEPS = ['type', 'guests', 'setting', 'budget', 'result']
 const STORAGE_KEY = 'rentora_plan_event'
+const SETTINGS = [
+  { id: 'outdoor', label: 'Outdoor', Icon: OutdoorIcon },
+  { id: 'indoor', label: 'Indoor', Icon: IndoorIcon },
+]
 
-function categoryIcon(name) {
-  return CATEGORIES.find((c) => c.name === name)?.icon || '📦'
+function CategoryIcon({ name, className }) {
+  const Icon = CATEGORY_ICONS[name]
+  return Icon ? <Icon className={className} /> : <span className={className}>📦</span>
 }
 
 function loadSaved() {
@@ -145,13 +153,13 @@ export default function PlanEvent() {
           onClick={() => goTo(stepIdx - 1)}
           className="mb-4 flex items-center gap-1.5 text-sm text-midnight/60 hover:text-gold transition-colors"
         >
-          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M15 18l-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+          <BackIcon className="h-5 w-5" />
           Back
         </button>
       )}
-      <p className="font-mono text-xs uppercase tracking-[0.2em] text-gold">✨ Plan my event</p>
+      <p className="font-mono text-xs uppercase tracking-[0.2em] text-gold flex items-center gap-1.5">
+        <SparkleIcon className="h-3.5 w-3.5" /> Plan my event
+      </p>
 
       {/* progress dots */}
       <div className="mt-4 flex gap-1.5">
@@ -164,18 +172,21 @@ export default function PlanEvent() {
         <div className="animate-pop-in mt-8">
           <h1 className="font-display text-2xl font-semibold text-midnight">What event are you planning?</h1>
           <div className="mt-6 grid grid-cols-2 gap-3">
-            {EVENT_TYPES.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => { setEventType(t.id); goTo(1) }}
-                className={`glass flex flex-col items-center gap-2 rounded-2xl px-4 py-6 transition-transform hover:-translate-y-1 ${
-                  eventType === t.id ? 'border-gold/50' : ''
-                }`}
-              >
-                <span className="text-3xl">{t.emoji}</span>
-                <span className="text-sm font-medium text-midnight/90">{t.label}</span>
-              </button>
-            ))}
+            {EVENT_TYPES.map((t) => {
+              const Icon = EVENT_ICONS[t.id]
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => { setEventType(t.id); goTo(1) }}
+                  className={`glass flex flex-col items-center gap-2 rounded-2xl px-4 py-6 transition-transform hover:-translate-y-1 ${
+                    eventType === t.id ? 'border-gold/50' : ''
+                  }`}
+                >
+                  {Icon && <Icon className="h-8 w-8 text-midnight/80" />}
+                  <span className="text-sm font-medium text-midnight/90">{t.label}</span>
+                </button>
+              )
+            })}
           </div>
         </div>
       )}
@@ -206,16 +217,13 @@ export default function PlanEvent() {
         <div className="animate-pop-in mt-10 text-center">
           <h1 className="font-display text-2xl font-semibold text-midnight">Indoor or outdoor?</h1>
           <div className="mt-6 grid grid-cols-2 gap-3">
-            {[
-              { id: 'outdoor', label: 'Outdoor', emoji: '☀️' },
-              { id: 'indoor', label: 'Indoor', emoji: '🏛️' },
-            ].map((o) => (
+            {SETTINGS.map((o) => (
               <button
                 key={o.id}
                 onClick={() => { setSetting(o.id); goTo(3) }}
                 className="glass flex flex-col items-center gap-2 rounded-2xl px-4 py-8 transition-transform hover:-translate-y-1"
               >
-                <span className="text-3xl">{o.emoji}</span>
+                <o.Icon className="h-8 w-8 text-midnight/80" />
                 <span className="text-sm font-medium text-midnight/90">{o.label}</span>
               </button>
             ))}
@@ -277,7 +285,7 @@ export default function PlanEvent() {
                     style={{ animationDelay: `${i * 60}ms` }}
                   >
                     <div className="flex min-w-0 items-center gap-3">
-                      <span className="text-xl">{categoryIcon(item.category)}</span>
+                      <CategoryIcon name={item.category} className="h-5 w-5 shrink-0 text-midnight/70" />
                       <div className="min-w-0">
                         {CATEGORIES.some((c) => c.name === item.category) ? (
                           <Link to={`/browse?category=${encodeURIComponent(item.category)}`} className="truncate font-display font-semibold text-midnight hover:text-gold">

@@ -58,6 +58,13 @@ A few things came up that need real infrastructure or a legal/financial partner 
 - A Firestore transaction on booking creation to fully close the double-booking race window
 - Native mobile app (this is web-only; works fine as an installable PWA on mobile data in the meantime)
 
+## This pass: alignment, custom icons, guest gating
+
+- **Fixed the real inconsistency bug**: Browse used a 1-column mobile grid while the Dashboard's "Popular right now" used 2-column — different breakpoints on different pages meant the app felt like two different apps depending on which screen you were on. Every listing grid (Browse, Dashboard) now uses the exact same `grid-cols-2 → md:grid-cols-3 → lg:grid-cols-4` pattern, and several stray `sm:` breakpoints that created a "half mobile, half desktop" transition zone were removed in favor of one consistent switch point (`md`) throughout.
+- **Notification bell is now a centered panel** (`fixed`, viewport-centered, with a dimmed backdrop) instead of a corner dropdown that could render off-screen on narrow phones.
+- **24 custom icons** (`components/domainIcons.jsx`, mapped in `components/iconMap.jsx`): every equipment category and every event type now has a hand-built line-art icon instead of a system emoji, used on Browse's category chips and throughout Plan My Event. A shared UI icon set (`components/icons.jsx`) also replaced the mismatched emoji in the nav, dashboard tiles, and Account page.
+- **Guests are now gated**: Browse, listing pages, Plan My Event, and Cart all require an account — a logged-out visitor lands on a redesigned marketing page (`HomeGuest.jsx`) with a PS5-menu-style reactive glow background (two soft blurred color blobs that drift toward the pointer) and a clear path to sign up, but can't actually use the marketplace without creating an account first. Worth knowing: this only gates the _app's routes_ — it doesn't lock down the underlying Firestore read rules for listings, which remain public (unrelated concern, not changed here).
+
 ## What's new in this pass
 
 - **Home now has two real modes**: a marketing page when logged out (`HomeGuest.jsx`), and an iOS-glass dashboard when logged in (`HomeDashboard.jsx`) — greeting, live search, quick-action tiles, an upcoming booking preview, and popular listings, all over a drifting blue/gold aurora backdrop (`aurora-bg` in `index.css`).

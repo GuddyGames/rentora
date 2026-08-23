@@ -60,40 +60,45 @@ export default function NotificationBell() {
       </button>
 
       {open && (
-        <div className="absolute right-0 z-50 mt-2 w-80 max-w-[90vw] rounded-2xl border border-black/5 bg-white shadow-xl">
-          <div className="flex items-center justify-between border-b border-black/5 px-4 py-3">
-            <p className="font-display font-semibold text-midnight">Notifications</p>
-            {unreadCount > 0 && (
-              <button onClick={() => markAllRead(user.uid)} className="text-xs text-royal hover:underline">
-                Mark all read
-              </button>
-            )}
-          </div>
-          <div className="max-h-80 overflow-y-auto">
-            {notifications.length === 0 ? (
-              <p className="px-4 py-6 text-center text-sm text-midnight/50">Nothing yet.</p>
-            ) : (
-              notifications.map((n) => (
-                <button
-                  key={n.id}
-                  onClick={() => handleClickNotification(n)}
-                  className={`block w-full border-b border-black/5 px-4 py-3 text-left last:border-0 hover:bg-black/5 ${
-                    n.read ? 'opacity-60' : ''
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    {!n.read && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-gold" />}
-                    <p className="truncate text-sm font-medium text-midnight">{n.title}</p>
-                  </div>
-                  <p className="mt-0.5 text-xs text-midnight/60">{n.body}</p>
-                  <p className="mt-1 text-[10px] uppercase tracking-wide text-midnight/30">
-                    {timeAgo(n.createdAt?.toDate?.())}
-                  </p>
+        <>
+          {/* dimmed backdrop, also closes on click — keeps this feeling like
+              one consistent centered panel rather than a corner dropdown */}
+          <div className="fixed inset-0 z-40 bg-midnight/20" onClick={() => setOpen(false)} />
+          <div className="fixed left-1/2 top-16 z-50 w-[92vw] max-w-sm -translate-x-1/2 rounded-2xl border border-black/5 bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-black/5 px-4 py-3">
+              <p className="font-display font-semibold text-midnight">Notifications</p>
+              {unreadCount > 0 && (
+                <button onClick={() => markAllRead(user.uid)} className="text-xs text-royal hover:underline">
+                  Mark all read
                 </button>
-              ))
-            )}
+              )}
+            </div>
+            <div className="max-h-80 overflow-y-auto">
+              {notifications.length === 0 ? (
+                <p className="px-4 py-6 text-center text-sm text-midnight/50">Nothing yet.</p>
+              ) : (
+                notifications.map((n) => (
+                  <button
+                    key={n.id}
+                    onClick={() => handleClickNotification(n)}
+                    className={`block w-full border-b border-black/5 px-4 py-3 text-left last:border-0 hover:bg-black/5 ${
+                      n.read ? 'opacity-60' : ''
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      {!n.read && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-gold" />}
+                      <p className="truncate text-sm font-medium text-midnight">{n.title}</p>
+                    </div>
+                    <p className="mt-0.5 text-xs text-midnight/60">{n.body}</p>
+                    <p className="mt-1 text-[10px] uppercase tracking-wide text-midnight/30">
+                      {timeAgo(n.createdAt?.toDate?.())}
+                    </p>
+                  </button>
+                ))
+              )}
+            </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   )

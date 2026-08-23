@@ -137,11 +137,11 @@ export default function HomeDashboard() {
             <Link to="/browse" className="text-sm text-royal hover:underline">See all →</Link>
           </div>
           {loading ? (
-            <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4">
+            <div className="mt-4 grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
               {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-56 w-full rounded-2xl" />)}
             </div>
           ) : (
-            <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4">
+            <div className="mt-4 grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
               {featured.map((l) => <ListingCard key={l.id} listing={l} />)}
             </div>
           )}

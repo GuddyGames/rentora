@@ -28,9 +28,30 @@ export default function App() {
       <Navbar />
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/browse" element={<Browse />} />
-        <Route path="/listing/:id" element={<ListingDetail />} />
-        <Route path="/plan" element={<PlanEvent />} />
+        <Route
+          path="/browse"
+          element={
+            <ProtectedRoute>
+              <Browse />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/listing/:id"
+          element={
+            <ProtectedRoute>
+              <ListingDetail />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/plan"
+          element={
+            <ProtectedRoute>
+              <PlanEvent />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/pricing" element={<Pricing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
@@ -58,7 +79,14 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-        <Route path="/cart" element={<Cart />} />
+        <Route
+          path="/cart"
+          element={
+            <ProtectedRoute>
+              <Cart />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/account"
           element={

@@ -4,6 +4,8 @@ import { getAllListings, CATEGORIES } from '../services/listings'
 import ListingCard from '../components/ListingCard'
 import { ListingCardSkeleton } from '../components/Skeleton'
 import BackButton from '../components/BackButton'
+import { CATEGORY_ICONS } from '../components/iconMap'
+import { SparkleIcon, SearchIcon } from '../components/icons'
 
 export default function Browse() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -45,39 +47,42 @@ export default function Browse() {
       <div className="mt-6 flex flex-wrap gap-4">
         <button onClick={() => setCategory('')} className="flex flex-col items-center gap-1.5">
           <span
-            className={`flex h-14 w-14 items-center justify-center rounded-full text-xl transition-colors ${
+            className={`flex h-14 w-14 items-center justify-center rounded-full transition-colors ${
               !category ? 'bg-gold text-midnight' : 'glass text-midnight/80 hover:border-gold/40'
             }`}
           >
-            ✨
+            <SparkleIcon className="h-6 w-6" />
           </span>
           <span className={`text-xs ${!category ? 'text-gold' : 'text-midnight/60'}`}>All</span>
         </button>
-        {CATEGORIES.map((cat) => (
-          <button key={cat.name} onClick={() => setCategory(cat.name)} className="flex flex-col items-center gap-1.5">
-            <span
-              className={`flex h-14 w-14 items-center justify-center rounded-full text-xl transition-colors ${
-                category === cat.name ? 'bg-gold text-midnight' : 'glass text-midnight/80 hover:border-gold/40'
-              }`}
-            >
-              {cat.icon}
-            </span>
-            <span className={`max-w-[64px] text-center text-xs leading-tight ${category === cat.name ? 'text-gold' : 'text-midnight/60'}`}>
-              {cat.name}
-            </span>
-          </button>
-        ))}
+        {CATEGORIES.map((cat) => {
+          const Icon = CATEGORY_ICONS[cat.name]
+          return (
+            <button key={cat.name} onClick={() => setCategory(cat.name)} className="flex flex-col items-center gap-1.5">
+              <span
+                className={`flex h-14 w-14 items-center justify-center rounded-full transition-colors ${
+                  category === cat.name ? 'bg-gold text-midnight' : 'glass text-midnight/80 hover:border-gold/40'
+                }`}
+              >
+                {Icon && <Icon className="h-6 w-6" />}
+              </span>
+              <span className={`max-w-[64px] text-center text-xs leading-tight ${category === cat.name ? 'text-gold' : 'text-midnight/60'}`}>
+                {cat.name}
+              </span>
+            </button>
+          )
+        })}
       </div>
 
       {error && <p className="mt-10 text-ruby">Couldn't load listings: {error}</p>}
       {!loading && !error && visibleListings.length === 0 && (
         <div className="mt-16 flex flex-col items-center text-center">
-          <span className="text-4xl">🔍</span>
+          <SearchIcon className="h-10 w-10 text-midnight/30" />
           <p className="mt-3 text-midnight/70">Nothing here yet — check back soon, or try a different search.</p>
         </div>
       )}
 
-      <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-8 grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
         {loading
           ? Array.from({ length: 6 }).map((_, i) => <ListingCardSkeleton key={i} />)
           : visibleListings.map((listing) => <ListingCard key={listing.id} listing={listing} />)}

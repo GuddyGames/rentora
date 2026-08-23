@@ -90,7 +90,7 @@ export default function Dashboard() {
                 <p className="mt-2 text-midnight/60">Your first listing takes two minutes — start whenever you're ready.</p>
               </div>
             ) : (
-              <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
                 {listings.map((l) => (
                   <div key={l.id} className="glass flex items-start justify-between gap-3 rounded-2xl p-4">
                     <div className="min-w-0">
