@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import AdminLayout from '../../components/admin/AdminLayout'
-import { getAllUsersAdmin, setUserSuspended } from '../../services/admin'
+import { getAllUsersAdmin, setUserSuspended, setUserVerified } from '../../services/admin'
 import { getOrCreateAdminConversation } from '../../services/chat'
 import { useAuth } from '../../context/AuthContext'
 import Skeleton from '../../components/Skeleton'
@@ -26,6 +26,7 @@ export default function AdminUsers() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [messaging, setMessaging] = useState(null)
+  const admin = { uid: user?.uid, name: profile?.name || user?.email }
 
   useEffect(() => {
     getAllUsersAdmin()
@@ -37,8 +38,14 @@ export default function AdminUsers() {
   async function toggleSuspend(u) {
     const next = !u.suspended
     if (next && !window.confirm(`Restrict ${u.name || u.email}'s account?`)) return
-    await setUserSuspended(u.id, next)
+    await setUserSuspended(u.id, next, admin)
     setUsers((prev) => prev.map((x) => (x.id === u.id ? { ...x, suspended: next } : x)))
+  }
+
+  async function toggleVerified(u) {
+    const next = !u.verified
+    await setUserVerified(u.id, next, admin)
+    setUsers((prev) => prev.map((x) => (x.id === u.id ? { ...x, verified: next } : x)))
   }
 
   async function handleMessage(u) {
@@ -84,7 +91,7 @@ export default function AdminUsers() {
                 <div className="min-w-0">
                   <p className="flex items-center gap-1.5 truncate font-display font-semibold text-midnight">
                     <span className={`inline-block h-2 w-2 shrink-0 rounded-full ${isOnline ? 'bg-emerald' : 'bg-black/15'}`} />
-                    {u.name || 'Unnamed'} {u.isAdmin && <span className="ml-1 text-xs text-royal">admin</span>}
+                    {u.name || 'Unnamed'} {u.isAdmin && <span className="ml-1 text-xs text-royal">admin</span>} {u.verified && <span className="ml-1 text-xs text-emerald">✓ verified</span>}
                   </p>
                   <p className="truncate text-sm text-midnight/50">
                     {u.email} · {u.role} {u.suspended && <span className="text-ruby">· restricted</span>}
@@ -99,6 +106,16 @@ export default function AdminUsers() {
                       className="rounded-full border border-black/15 px-3 py-1.5 text-xs font-medium text-midnight hover:border-royal hover:text-royal disabled:opacity-50"
                     >
                       {messaging === u.id ? 'Opening…' : 'Message'}
+                    </button>
+                  )}
+                  {!u.isAdmin && (
+                    <button
+                      onClick={() => toggleVerified(u)}
+                      className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                        u.verified ? 'border-emerald bg-emerald/10 text-emerald' : 'border-black/15 text-midnight/70 hover:border-emerald hover:text-emerald'
+                      }`}
+                    >
+                      {u.verified ? 'Unverify' : 'Verify'}
                     </button>
                   )}
                   {!u.isAdmin && (

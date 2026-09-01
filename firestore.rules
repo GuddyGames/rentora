@@ -17,19 +17,22 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow read: if isSignedIn();
+      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
       allow create: if isSignedIn() && request.auth.uid == userId
         && request.resource.data.isAdmin != true
-        && request.resource.data.suspended != true;
-      // a user can edit their own profile, but NEVER the two moderation
-      // fields — those are admin-only, in both directions (a suspended user
-      // must not be able to un-suspend themselves either)
+        && request.resource.data.suspended != true
+        && request.resource.data.verified != true;
+      // a user can edit their own profile (including a self-service
+      // account-deletion anonymization of name/email), but NEVER the
+      // moderation fields — those are admin-only, in both directions (a
+      // suspended user must not be able to un-suspend themselves either,
+      // and nobody can self-verify)
       allow update: if isSignedIn() && (
         (request.auth.uid == userId &&
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(
             ['name', 'email', 'role', 'createdAt', 'lastActiveAt']
           )) ||
-        (isAdmin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['suspended', 'isAdmin']))
+        (isAdmin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['suspended', 'isAdmin', 'verified']))
       );
       allow delete: if false;
     }
@@ -48,7 +51,7 @@ service cloud.firestore {
         resource.data.ownerId == request.auth.uid ||
         (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ratingAvg', 'ratingCount']) &&
           request.resource.data.ratingCount == resource.data.ratingCount + 1) ||
-        (isAdmin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['active', 'featured', 'featuredUntil']))
+        (isAdmin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['active', 'featured', 'featuredUntil', 'moderationStatus', 'ownerVerified']))
       );
     }
 
@@ -60,6 +63,12 @@ service cloud.firestore {
       allow create: if isSignedIn() &&
         request.resource.data.title is string && request.resource.data.body is string;
       allow delete: if false;
+    }
+
+    match /auditLog/{entryId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin() && request.resource.data.adminId == request.auth.uid;
+      allow update, delete: if false;
     }
 
     match /boosts/{boostId} {

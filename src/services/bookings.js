@@ -7,6 +7,7 @@ import {
   query,
   where,
   orderBy,
+  limit,
   serverTimestamp,
 } from 'firebase/firestore'
 import { db } from '../firebase'
@@ -35,7 +36,16 @@ export function nextStatus(currentStatus) {
 // Checks existing confirmed/pending bookings for the same listing that overlap
 // the requested date range. This is a submit-time check, not a live lock —
 // good enough for MVP volume; revisit with a transaction if bookings scale up.
-export async function hasConflict(listingId, startDate, endDate) {
+// Checks whether booking `requestedQty` units for this date range would
+// exceed the listing's total quantity, accounting for every other
+// pending/confirmed booking that overlaps the same dates — not just
+// whether *any* other booking exists for the range. A listing with 100
+// chairs and one 20-chair booking still has 80 free; this used to block
+// on the mere presence of any overlap regardless of how much headroom
+// was actually left, which both rejected valid bookings unnecessarily and
+// — the real risk — never actually verified enough units existed for
+// larger quantities either.
+export async function hasConflict(listingId, startDate, endDate, requestedQty = 1, totalQty = 1) {
   const q = query(
     bookingsRef,
     where('listingId', '==', listingId),
@@ -44,12 +54,16 @@ export async function hasConflict(listingId, startDate, endDate) {
   const snap = await getDocs(q)
   const start = new Date(startDate).getTime()
   const end = new Date(endDate).getTime()
-  return snap.docs.some((d) => {
+
+  const overlappingQty = snap.docs.reduce((sum, d) => {
     const b = d.data()
     const bStart = new Date(b.startDate).getTime()
     const bEnd = new Date(b.endDate).getTime()
-    return start <= bEnd && end >= bStart
-  })
+    const overlaps = start <= bEnd && end >= bStart
+    return overlaps ? sum + (b.quantity || 1) : sum
+  }, 0)
+
+  return overlappingQty + requestedQty > totalQty
 }
 
 export async function createBooking({ listingId, listingTitle, ownerId, renterId, renterName, startDate, endDate, totalPrice, quantity, deliveryAddress, deliveryLat, deliveryLon }) {
@@ -120,13 +134,13 @@ export async function markPaid(booking, reference) {
 }
 
 export async function getBookingsForRenter(renterId) {
-  const q = query(bookingsRef, where('renterId', '==', renterId), orderBy('createdAt', 'desc'))
+  const q = query(bookingsRef, where('renterId', '==', renterId), orderBy('createdAt', 'desc'), limit(100))
   const snap = await getDocs(q)
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }))
 }
 
 export async function getBookingsForOwner(ownerId) {
-  const q = query(bookingsRef, where('ownerId', '==', ownerId), orderBy('createdAt', 'desc'))
+  const q = query(bookingsRef, where('ownerId', '==', ownerId), orderBy('createdAt', 'desc'), limit(100))
   const snap = await getDocs(q)
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }))
 }

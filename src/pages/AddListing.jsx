@@ -25,9 +25,15 @@ export default function AddListing() {
   async function handleImageChange(e) {
     const file = e.target.files?.[0]
     if (!file) return
-    const compressed = await compressImage(file)
-    setImageBase64(compressed)
-    setImagePreview(compressed)
+    setError('')
+    try {
+      const compressed = await compressImage(file)
+      setImageBase64(compressed)
+      setImagePreview(compressed)
+    } catch (err) {
+      setError(err.message)
+      e.target.value = ''
+    }
   }
 
   async function handleSubmit(e) {

@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /account
+Disallow: /dashboard
+Disallow: /my-bookings
+Disallow: /cart
+Disallow: /checkout
+Disallow: /messages
+
+Sitemap: https://rentora-inky.vercel.app/sitemap.xml

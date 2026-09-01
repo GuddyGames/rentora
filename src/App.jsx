@@ -21,10 +21,15 @@ import AdminListings from './pages/admin/AdminListings'
 import AdminUsers from './pages/admin/AdminUsers'
 import AdminBookings from './pages/admin/AdminBookings'
 import AdminDisputes from './pages/admin/AdminDisputes'
+import AdminAuditLog from './pages/admin/AdminAuditLog'
+import Privacy from './pages/Privacy'
+import Terms from './pages/Terms'
+import RefundPolicy from './pages/RefundPolicy'
+import Footer from './components/Footer'
 
 export default function App() {
   return (
-    <div className="min-h-screen bg-mist">
+    <div className="flex min-h-screen flex-col bg-mist">
       <Navbar />
       <Routes>
         <Route path="/" element={<Home />} />
@@ -53,6 +58,9 @@ export default function App() {
           }
         />
         <Route path="/pricing" element={<Pricing />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/refund-policy" element={<RefundPolicy />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route
@@ -159,7 +167,16 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/admin/audit-log"
+          element={
+            <ProtectedRoute requireAdmin>
+              <AdminAuditLog />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
+      <Footer />
     </div>
   )
 }

@@ -10,6 +10,7 @@ import {
   orderBy,
   onSnapshot,
   getDocs,
+  limit,
   serverTimestamp,
 } from 'firebase/firestore'
 import { db } from '../firebase'
@@ -93,7 +94,7 @@ export async function getConversation(conversationId) {
 }
 
 export async function getConversationsForUser(uid) {
-  const q = query(collection(db, 'conversations'), where('participantIds', 'array-contains', uid), orderBy('lastMessageAt', 'desc'))
+  const q = query(collection(db, 'conversations'), where('participantIds', 'array-contains', uid), orderBy('lastMessageAt', 'desc'), limit(100))
   const snap = await getDocs(q)
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }))
 }

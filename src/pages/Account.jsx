@@ -32,8 +32,10 @@ function Row({ icon, label, to, onClick, danger }) {
 }
 
 export default function Account() {
-  const { user, profile, logout } = useAuth()
+  const { user, profile, logout, deleteAccount } = useAuth()
   const navigate = useNavigate()
+  const [deleteBusy, setDeleteBusy] = useState(false)
+  const [deleteError, setDeleteError] = useState('')
   const [notifications, setNotifications] = useState(true)
   const [resendBusy, setResendBusy] = useState(false)
   const [resendSent, setResendSent] = useState(false)
@@ -53,6 +55,24 @@ export default function Account() {
   async function handleLogout() {
     await logout()
     navigate('/')
+  }
+
+  async function handleDeleteAccount() {
+    if (!window.confirm("Delete your account? This can't be undone — you'll be logged out and won't be able to sign back in with this email.")) return
+    setDeleteError('')
+    setDeleteBusy(true)
+    try {
+      await deleteAccount()
+      navigate('/')
+    } catch (err) {
+      if (err.code === 'auth/requires-recent-login') {
+        setDeleteError('For your security, please log out and log back in, then try deleting your account again right away.')
+      } else {
+        setDeleteError("Couldn't delete your account — try again in a moment.")
+      }
+    } finally {
+      setDeleteBusy(false)
+    }
   }
 
   if (!user) return null
@@ -119,7 +139,16 @@ export default function Account() {
 
       <div className="glass mt-6 rounded-2xl">
         <Row icon={<LogoutIcon className="h-5 w-5" />} label="Log out" onClick={handleLogout} danger />
+        <div className="border-t border-black/10">
+          <Row
+            icon={<span className="text-lg">🗑️</span>}
+            label={deleteBusy ? 'Deleting…' : 'Delete account'}
+            onClick={deleteBusy ? undefined : handleDeleteAccount}
+            danger
+          />
+        </div>
       </div>
+      {deleteError && <p className="mt-2 text-sm text-ruby">{deleteError}</p>}
     </div>
   )
 }

@@ -67,7 +67,7 @@ export default function Checkout() {
     try {
       // re-check conflicts right before payment — dates were picked earlier and slots can fill up
       for (const item of items) {
-        const conflict = await hasConflict(item.listingId, item.startDate, item.endDate)
+        const conflict = await hasConflict(item.listingId, item.startDate, item.endDate, item.qty, item.maxQty || item.qty)
         if (conflict) {
           setError(`"${item.title}" got booked by someone else for those dates — remove it from your cart and try different dates.`)
           setBusy(false)

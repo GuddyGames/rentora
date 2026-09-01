@@ -9,6 +9,7 @@ import {
   signOut,
   sendEmailVerification,
   sendPasswordResetEmail,
+  deleteUser,
 } from 'firebase/auth'
 import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { auth, db } from '../firebase'
@@ -81,11 +82,20 @@ export function AuthProvider({ children }) {
     return sendPasswordResetEmail(auth, email)
   }
 
+  // Firebase requires a *recent* login to delete an account — if this
+  // throws auth/requires-recent-login, the caller needs to have the user
+  // sign in again first, then retry.
+  async function deleteAccount() {
+    const uid = user.uid
+    await updateDoc(doc(db, 'users', uid), { name: 'Deleted user', email: '[deleted]' })
+    await deleteUser(user)
+  }
+
   function logout() {
     return signOut(auth)
   }
 
-  const value = { user, profile, loading, signup, login, loginWithGoogle, resetPassword, logout }
+  const value = { user, profile, loading, signup, login, loginWithGoogle, resetPassword, deleteAccount, logout }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

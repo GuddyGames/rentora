@@ -58,12 +58,41 @@ A few things came up that need real infrastructure or a legal/financial partner 
 - A Firestore transaction on booking creation to fully close the double-booking race window
 - Native mobile app (this is web-only; works fine as an installable PWA on mobile data in the meantime)
 
+
+
+## This pass: working through an external code review
+
+A ChatGPT review of the project raised 27 points. Here's what was real and fixed, what was already handled, and what's deliberately skipped:
+
+**Real gaps, now fixed:**
+- **Users collection was over-exposed** — any signed-in user could read any other user's full profile (name, email, admin/suspended/verified status) via a direct Firestore query, bypassing the fact that the admin UI only *showed* this to admins. Reads are now restricted to the profile owner or an admin. Names shown elsewhere (listings, bookings, chat) were already denormalized copies, so nothing in the app needed this broad read access.
+- **Double-booking / overselling wasn't actually quantity-aware** — the availability check blocked *any* overlapping booking regardless of how much stock was left (rejecting valid bookings for owners with many units), and never verified that cumulative overlapping bookings stayed within the listing's total quantity (the real overselling risk the review flagged). Both are fixed: `hasConflict` now sums overlapping bookings' quantities against the listing's actual stock.
+- **Listing moderation queue** — new listings now start `pending` and stay out of Browse until an admin approves them (`/admin/listings`), instead of going live instantly with zero review. The owner sees the pending/rejected status on their own Dashboard.
+- **Honest vendor verification** — admin can mark a vendor "✓ Verified" from `/admin/users`, which shows on their listings. This is a real admin decision, not a self-claimed or automatic badge — same principle as refusing to fake insurance earlier in this build.
+- **Listing reporting** — "Report listing" on any listing page, feeding the same admin queue as booking disputes (now labeled by kind).
+- **Audit log** (`/admin/audit-log`) — every restriction, verification, listing moderation, and dispute resolution is now logged with who/what/when. This closes a gap I'd already flagged in my own earlier security review but hadn't built yet.
+- **Account deletion** — Account page now has a real delete option (anonymizes profile, deletes the Firebase Auth account).
+- **Image upload hardening** — rejects non-image files and anything over 15MB before ever loading it into memory, instead of letting a bad file hang the browser.
+- **Query limits** added across admin/browse/booking list reads (not the stats dashboard — capping that would silently produce wrong counts, which is worse than the read-cost concern at this scale).
+- **Vendor earnings summary** on the owner Dashboard.
+- **SEO basics**: `robots.txt`, a static `sitemap.xml`, Open Graph/Twitter Card tags. Per-listing dynamic meta tags would need server-side rendering, which this Vite SPA doesn't have — flagged, not faked.
+- **Draft legal pages**: Privacy Policy, Terms of Service, Cancellation & Refund Policy, linked from a new footer. Each is a genuine draft, not filler — and each says plainly, in the app itself, that it needs an actual lawyer's review before real money/users depend on it.
+
+**Already handled** (from the earlier security pass in this project): Firestore ownership checks, admin self-escalation, payment-amount trust at the booking level (still has the same open architectural item below), review authenticity, email verification, password reset.
+
+**Deliberately not built, and why:**
+- **Server-side Paystack verification** — still the one open item from the earlier security review. This needs either Firebase Cloud Functions (requires switching to the Blaze plan) or a Vercel serverless function. Not done silently because it's a real architecture decision, not a quick fix.
+- **Firebase Storage rules** — doesn't apply; this project never adopted Storage, images are compressed and stored as base64 directly in Firestore (deliberate, avoids Storage billing).
+- **Firebase custom claims for admin** — the Firestore-field approach (`isAdmin` on the user doc, checked in rules) is a legitimate alternative for a project with no server to set custom claims from; custom claims would need Cloud Functions to assign.
+- **Refund automation** — same root cause as the Paystack verification item; noted honestly in the new Refund Policy page rather than implied.
+- **Calendar availability view, Airbnb-style structured search (What/Where/When), deep filtering (price/rating/verified), analytics/monitoring integration, automated npm audit** — all reasonable ideas, but they're feature/tooling work rather than fixes for something broken, and weren't built in this pass to keep focus on the concrete gaps above. Worth doing later.
+
 ## This pass: alignment, custom icons, guest gating
 
 - **Fixed the real inconsistency bug**: Browse used a 1-column mobile grid while the Dashboard's "Popular right now" used 2-column — different breakpoints on different pages meant the app felt like two different apps depending on which screen you were on. Every listing grid (Browse, Dashboard) now uses the exact same `grid-cols-2 → md:grid-cols-3 → lg:grid-cols-4` pattern, and several stray `sm:` breakpoints that created a "half mobile, half desktop" transition zone were removed in favor of one consistent switch point (`md`) throughout.
 - **Notification bell is now a centered panel** (`fixed`, viewport-centered, with a dimmed backdrop) instead of a corner dropdown that could render off-screen on narrow phones.
 - **24 custom icons** (`components/domainIcons.jsx`, mapped in `components/iconMap.jsx`): every equipment category and every event type now has a hand-built line-art icon instead of a system emoji, used on Browse's category chips and throughout Plan My Event. A shared UI icon set (`components/icons.jsx`) also replaced the mismatched emoji in the nav, dashboard tiles, and Account page.
-- **Guests are now gated**: Browse, listing pages, Plan My Event, and Cart all require an account — a logged-out visitor lands on a redesigned marketing page (`HomeGuest.jsx`) with a PS5-menu-style reactive glow background (two soft blurred color blobs that drift toward the pointer) and a clear path to sign up, but can't actually use the marketplace without creating an account first. Worth knowing: this only gates the _app's routes_ — it doesn't lock down the underlying Firestore read rules for listings, which remain public (unrelated concern, not changed here).
+- **Guests are now gated**: Browse, listing pages, Plan My Event, and Cart all require an account — a logged-out visitor lands on a redesigned marketing page (`HomeGuest.jsx`) with a PS5-menu-style reactive glow background (two soft blurred color blobs that drift toward the pointer) and a clear path to sign up, but can't actually use the marketplace without creating an account first. Worth knowing: this only gates the *app's routes* — it doesn't lock down the underlying Firestore read rules for listings, which remain public (unrelated concern, not changed here).
 
 ## What's new in this pass
 

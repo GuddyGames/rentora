@@ -37,8 +37,12 @@ export default function Dashboard() {
 
   async function handlePhotoStaged(id, file) {
     if (!file) return
-    const compressed = await compressImage(file)
-    setPendingPhoto((prev) => ({ ...prev, [id]: compressed }))
+    try {
+      const compressed = await compressImage(file)
+      setPendingPhoto((prev) => ({ ...prev, [id]: compressed }))
+    } catch (err) {
+      setError(err.message)
+    }
   }
 
   async function handleDeleteListing(id, title) {
@@ -82,6 +86,27 @@ export default function Dashboard() {
         </div>
       ) : error ? null : (
         <>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className="glass rounded-2xl p-4">
+              <p className="text-xs text-midnight/50">Total earnings</p>
+              <p className="mt-1 font-display text-lg font-semibold text-midnight">
+                ₦{bookings.filter((b) => b.paid).reduce((sum, b) => sum + (b.totalPrice || 0), 0).toLocaleString()}
+              </p>
+            </div>
+            <div className="glass rounded-2xl p-4">
+              <p className="text-xs text-midnight/50">Active listings</p>
+              <p className="mt-1 font-display text-lg font-semibold text-midnight">{listings.filter((l) => l.active).length}</p>
+            </div>
+            <div className="glass rounded-2xl p-4">
+              <p className="text-xs text-midnight/50">Pending requests</p>
+              <p className="mt-1 font-display text-lg font-semibold text-midnight">{bookings.filter((b) => b.status === 'pending').length}</p>
+            </div>
+            <div className="glass rounded-2xl p-4">
+              <p className="text-xs text-midnight/50">Completed rentals</p>
+              <p className="mt-1 font-display text-lg font-semibold text-midnight">{bookings.filter((b) => b.status === 'completed').length}</p>
+            </div>
+          </div>
+
           <section className="mt-10">
             <h2 className="font-display text-xl font-semibold text-midnight">Your listings ({listings.length})</h2>
             {listings.length === 0 ? (
@@ -97,6 +122,11 @@ export default function Dashboard() {
                       <p className="font-mono text-xs uppercase tracking-wide text-gold">{l.category}</p>
                       <p className="font-display text-lg font-semibold text-midnight">{l.title}</p>
                       <p className="text-sm text-midnight/60">₦{Number(l.pricePerDay).toLocaleString()} / day · {l.location}</p>
+                      {l.moderationStatus !== 'approved' && (
+                        <p className={`mt-1 text-xs font-medium ${l.moderationStatus === 'rejected' ? 'text-ruby' : 'text-gold'}`}>
+                          {l.moderationStatus === 'rejected' ? 'Not approved — delete this and create a new listing with corrections' : 'Pending review — not visible in Browse yet'}
+                        </p>
+                      )}
                     </div>
                     <button
                       onClick={() => handleDeleteListing(l.id, l.title)}

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Static routes only — individual /listing/:id pages aren't listed here
+  since they're created dynamically and this is a plain static file. A
+  real per-listing sitemap would need to be generated server-side (or by
+  a build script that queries Firestore at deploy time), which is a
+  bigger piece of infrastructure than this file alone.
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://rentora-inky.vercel.app/</loc><priority>1.0</priority></url>
+  <url><loc>https://rentora-inky.vercel.app/pricing</loc><priority>0.6</priority></url>
+  <url><loc>https://rentora-inky.vercel.app/privacy</loc><priority>0.2</priority></url>
+  <url><loc>https://rentora-inky.vercel.app/terms</loc><priority>0.2</priority></url>
+</urlset>

@@ -4,6 +4,7 @@ import { getListing } from '../services/listings'
 import { hasConflict } from '../services/bookings'
 import { getReviewsForListing } from '../services/reviews'
 import { getOrCreateConversation } from '../services/chat'
+import { reportListing } from '../services/disputes'
 import { useAuth } from '../context/AuthContext'
 import { useCart } from '../context/CartContext'
 import BackButton from '../components/BackButton'
@@ -28,6 +29,11 @@ export default function ListingDetail() {
   const [errorMsg, setErrorMsg] = useState('')
   const [loadError, setLoadError] = useState('')
   const [messaging, setMessaging] = useState(false)
+  const [reportOpen, setReportOpen] = useState(false)
+  const [reportReason, setReportReason] = useState('Fake or misleading listing')
+  const [reportDetails, setReportDetails] = useState('')
+  const [reportBusy, setReportBusy] = useState(false)
+  const [reportSent, setReportSent] = useState(false)
 
   useEffect(() => {
     getListing(id)
@@ -49,7 +55,7 @@ export default function ListingDetail() {
     setErrorMsg('')
     setStatus('checking')
     try {
-      const conflict = await hasConflict(id, startDate, endDate)
+      const conflict = await hasConflict(id, startDate, endDate, 1, listing.quantity || 1)
       setStatus(conflict ? 'conflict' : 'ready')
     } catch (e) {
       setErrorMsg(`Couldn't check availability: ${e.message}`)
@@ -83,6 +89,27 @@ export default function ListingDetail() {
     }
   }
 
+  async function handleSubmitReport() {
+    if (!user) { navigate('/login'); return }
+    setReportBusy(true)
+    try {
+      await reportListing({
+        listingId: listing.id,
+        listingTitle: listing.title,
+        filedBy: user.uid,
+        filedByName: profile?.name || user.email,
+        reason: reportReason,
+        details: reportDetails,
+      })
+      setReportSent(true)
+      setReportOpen(false)
+    } catch (e) {
+      setErrorMsg(`Couldn't send the report: ${e.message}`)
+    } finally {
+      setReportBusy(false)
+    }
+  }
+
   if (loading) return <div className="mx-auto max-w-4xl px-5 py-16 text-midnight/60">Loading…</div>
   if (loadError) return <div className="mx-auto max-w-4xl px-5 py-16 text-ruby">Couldn't load this listing: {loadError}</div>
   if (!listing) return <div className="mx-auto max-w-4xl px-5 py-16 text-midnight/60">Listing not found.</div>
@@ -108,14 +135,56 @@ export default function ListingDetail() {
           <h1 className="mt-1 font-display text-3xl font-semibold text-midnight">{listing.title}</h1>
           <p className="mt-1 text-midnight/60">{listing.location}</p>
           <p className="mt-4 text-midnight/80">{listing.description}</p>
-          <div className="mt-4 flex items-center gap-3">
-            <p className="text-sm text-midnight/50">Listed by {listing.ownerName}</p>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <p className="text-sm text-midnight/50">
+              Listed by {listing.ownerName}
+              {listing.ownerVerified && <span className="ml-1.5 text-emerald">✓ Verified</span>}
+            </p>
             {user?.uid !== listing.ownerId && (
-              <button onClick={handleMessageOwner} disabled={messaging} className="text-sm text-gold hover:underline disabled:opacity-60">
-                Message owner
-              </button>
+              <>
+                <button onClick={handleMessageOwner} disabled={messaging} className="text-sm text-gold hover:underline disabled:opacity-60">
+                  Message owner
+                </button>
+                {reportSent ? (
+                  <span className="text-sm text-midnight/40">Report sent</span>
+                ) : (
+                  <button onClick={() => setReportOpen((v) => !v)} className="text-sm text-midnight/40 hover:text-ruby">
+                    Report listing
+                  </button>
+                )}
+              </>
             )}
           </div>
+
+          {reportOpen && (
+            <div className="glass mt-3 space-y-2 rounded-2xl p-4">
+              <select
+                value={reportReason}
+                onChange={(e) => setReportReason(e.target.value)}
+                className="w-full rounded-lg border border-black/10 bg-mist px-3 py-2 text-sm text-midnight"
+              >
+                <option>Fake or misleading listing</option>
+                <option>Wrong price</option>
+                <option>Inappropriate image</option>
+                <option>Suspected scam</option>
+                <option>Other</option>
+              </select>
+              <textarea
+                value={reportDetails}
+                onChange={(e) => setReportDetails(e.target.value)}
+                placeholder="Anything else we should know?"
+                rows={2}
+                className="w-full rounded-lg border border-black/10 bg-mist px-3 py-2 text-sm text-midnight placeholder:text-midnight/40"
+              />
+              <button
+                onClick={handleSubmitReport}
+                disabled={reportBusy}
+                className="rounded-full bg-ruby px-4 py-1.5 text-sm font-medium text-white hover:brightness-110 disabled:opacity-60"
+              >
+                {reportBusy ? 'Sending…' : 'Submit report'}
+              </button>
+            </div>
+          )}
 
           {reviews.length > 0 && (
             <div className="mt-8">

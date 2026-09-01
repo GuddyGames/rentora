@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react'
 import AdminLayout from '../../components/admin/AdminLayout'
 import { getAllDisputesAdmin, resolveDispute } from '../../services/disputes'
+import { useAuth } from '../../context/AuthContext'
 import Skeleton from '../../components/Skeleton'
 
 export default function AdminDisputes() {
+  const { user, profile } = useAuth()
+  const admin = { uid: user?.uid, name: profile?.name || user?.email }
   const [disputes, setDisputes] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -18,7 +21,7 @@ export default function AdminDisputes() {
   }, [])
 
   async function handleResolve(id) {
-    await resolveDispute(id, note)
+    await resolveDispute(id, note, admin)
     setDisputes((prev) => prev.map((d) => (d.id === id ? { ...d, status: 'resolved', resolutionNote: note } : d)))
     setNoteFor(null)
     setNote('')
@@ -40,7 +43,9 @@ export default function AdminDisputes() {
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <p className="font-display font-semibold text-midnight">{d.listingTitle}</p>
-                  <p className="text-sm text-midnight/50">Filed by {d.filedByName} · {d.reason}</p>
+                  <p className="text-sm text-midnight/50">
+                    {d.kind === 'listing_report' ? 'Listing report' : 'Booking dispute'} · Filed by {d.filedByName} · {d.reason}
+                  </p>
                 </div>
                 <span className={`rounded-full px-3 py-1 text-xs font-medium uppercase ${
                   d.status === 'open' ? 'bg-ruby/10 text-ruby' : 'bg-emerald/10 text-emerald'
