@@ -19,7 +19,7 @@ function GlassTile({ to, icon, label, sub, dark }) {
   return (
     <Link
       to={to}
-      className={`${dark ? 'ios-glass-dark text-white' : 'ios-glass text-midnight'} flex flex-col items-start gap-2 rounded-3xl p-5 transition-transform duration-200 hover:-translate-y-1`}
+      className={`${dark ? 'ios-glass-dark text-white' : 'ios-glass text-midnight'} flex min-h-[7.75rem] min-w-0 flex-col items-start gap-2 rounded-[1.35rem] p-3.5 transition-transform duration-200 hover:-translate-y-1 sm:min-h-0 sm:rounded-3xl sm:p-5`}
     >
       <span className={`flex h-9 w-9 items-center justify-center rounded-full ${dark ? 'bg-white/15' : 'bg-black/5'}`}>
         {icon}
@@ -74,29 +74,30 @@ export default function HomeDashboard() {
   return (
     <div className="aurora-bg min-h-[calc(100vh-57px)] px-4 py-5 sm:px-5 sm:py-8">
       <div className="mx-auto max-w-6xl">
-        {/* greeting + search */}
-        <div className="ios-glass rounded-3xl p-4 sm:p-6 md:p-8">
-          <p className="font-display text-xl text-midnight/80 md:text-2xl">
+        {/* Mobile-first greeting + search */}
+        <div className="ios-glass rounded-[1.75rem] p-4 sm:rounded-3xl sm:p-6 md:p-8">
+          <p className="font-display text-base text-midnight/65 sm:text-xl md:text-2xl">
             {greeting()}{profile?.name ? `, ${profile.name.split(' ')[0]}` : ''} 👋
           </p>
-          <h1 className="mt-1 break-words font-display text-2xl font-semibold text-midnight sm:text-3xl md:text-4xl">
+          <h1 className="mt-1 max-w-2xl break-words font-display text-[1.7rem] font-semibold leading-tight tracking-tight text-midnight sm:text-3xl md:text-4xl">
             What are you <span className="text-gold">planning</span> today?
           </h1>
-          <form onSubmit={handleSearch} className="mt-6 max-w-xl">
-            <div className="ios-glass-dark flex items-center gap-3 rounded-full px-5 py-3.5">
+          <form onSubmit={handleSearch} className="mt-5 max-w-xl sm:mt-6">
+            <div className="ios-glass-dark flex min-h-12 items-center gap-3 rounded-2xl px-4 py-3 sm:rounded-full sm:px-5 sm:py-3.5">
               <SearchIcon className="h-5 w-5 shrink-0 text-white/70" />
               <input
                 name="search"
                 type="text"
                 placeholder="Search canopies, chairs, sound systems…"
-                className="w-full bg-transparent text-white placeholder:text-white/50 focus:outline-none"
+                aria-label="Search event equipment"
+                className="w-full min-w-0 bg-transparent text-base text-white placeholder:text-white/50 focus:outline-none"
               />
             </div>
           </form>
         </div>
 
         {/* quick actions */}
-        <div className="mt-5 grid grid-cols-2 gap-4 md:grid-cols-4">
+        <div className="mt-4 grid grid-cols-2 gap-3 sm:mt-5 sm:gap-4 md:grid-cols-4">
           <GlassTile to="/browse" icon={<SearchIcon className="h-5 w-5" />} label="Browse" sub="Find equipment" />
           <GlassTile to="/plan" icon={<SparkleIcon className="h-5 w-5" />} label="Plan my event" sub="Get a checklist" dark />
           <GlassTile to="/cart" icon={<CartIcon className="h-5 w-5" />} label="Cart" sub={items.length ? `${items.length} item${items.length > 1 ? 's' : ''}` : 'Empty'} />
@@ -122,7 +123,7 @@ export default function HomeDashboard() {
 
         {/* upcoming booking (renter) */}
         {!isOwner && !loading && upcoming && (
-          <div className="ios-glass mt-5 rounded-3xl p-6">
+          <div className="ios-glass mt-4 rounded-[1.5rem] p-4 sm:mt-5 sm:rounded-3xl sm:p-6">
             <p className="text-xs uppercase tracking-wide text-midnight/50">Your next booking</p>
             <p className="mt-1 font-display text-xl font-semibold text-midnight">{upcoming.listingTitle}</p>
             <p className="text-sm text-midnight/60">{upcoming.startDate} → {upcoming.endDate} · {upcoming.status}</p>
@@ -132,17 +133,20 @@ export default function HomeDashboard() {
 
         {/* featured listings */}
         <div className="mt-8">
-          <div className="flex items-center justify-between">
-            <h2 className="font-display text-xl font-semibold text-midnight">Popular right now</h2>
+          <div className="flex items-end justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-gold sm:text-xs">Picked for your event</p>
+              <h2 className="mt-1 font-display text-xl font-semibold text-midnight sm:text-2xl">Popular right now</h2>
+            </div>
             <Link to="/browse" className="text-sm text-royal hover:underline">See all →</Link>
           </div>
           {loading ? (
-            <div className="mt-4 grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
-              {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-56 w-full rounded-2xl" />)}
+            <div className="mobile-horizontal-scroll mt-4 gap-3 pb-2 md:grid md:grid-cols-3 md:gap-5 md:overflow-visible lg:grid-cols-4">
+              {Array.from({ length: 4 }).map((_, i) => <div key={i} className="min-w-[72%] snap-start min-[430px]:min-w-[48%] md:min-w-0"><Skeleton className="h-56 w-full rounded-2xl" /></div>)}
             </div>
           ) : (
-            <div className="mt-4 grid grid-cols-2 gap-4 sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
-              {featured.map((l) => <ListingCard key={l.id} listing={l} />)}
+            <div className="mobile-horizontal-scroll mt-4 gap-3 pb-2 md:grid md:grid-cols-3 md:gap-5 md:overflow-visible lg:grid-cols-4">
+              {featured.map((l) => <div key={l.id} className="min-w-[72%] snap-start min-[430px]:min-w-[48%] md:min-w-0"><ListingCard listing={l} /></div>)}
             </div>
           )}
         </div>
