@@ -27,14 +27,14 @@ export default function Signup() {
   }
 
   return (
-    <div className="mx-auto max-w-sm px-5 py-16">
-      <h1 className="font-display text-3xl font-semibold text-midnight">Create an account</h1>
+    <div className="mx-auto max-w-sm px-4 py-8 sm:px-5 sm:py-14 md:py-16">
+      <h1 className="break-words font-display text-2xl font-semibold text-midnight sm:text-3xl">Create an account</h1>
 
       <div className="mt-6 grid grid-cols-2 gap-2">
         <button
           type="button"
           onClick={() => setRole('renter')}
-          className={`rounded-lg border px-4 py-2.5 text-sm transition-colors ${
+          className={`min-w-0 rounded-lg border px-3 py-3 text-sm transition-colors ${
             role === 'renter' ? 'border-gold bg-gold/10 text-gold' : 'border-black/10 text-midnight/70'
           }`}
         >
