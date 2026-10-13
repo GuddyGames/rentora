@@ -80,17 +80,12 @@ export async function getListing(id) {
 }
 
 export async function getAllListings({ category } = {}) {
-  let q = query(listingsRef, where('active', '==', true), orderBy('createdAt', 'desc'), limit(120))
+  let q = query(listingsRef, where('active', '==', true), where('moderationStatus', '==', 'approved'), orderBy('createdAt', 'desc'), limit(120))
   if (category) {
-    q = query(listingsRef, where('active', '==', true), where('category', '==', category), orderBy('createdAt', 'desc'), limit(120))
+    q = query(listingsRef, where('active', '==', true), where('category', '==', category), where('moderationStatus', '==', 'approved'), orderBy('createdAt', 'desc'), limit(120))
   }
   const snap = await getDocs(q)
-  const listings = snap.docs
-    .map((d) => ({ id: d.id, ...d.data() }))
-    // approval gate is applied client-side rather than as a query filter —
-    // that would need yet another composite index for every category
-    // combination; fine at this scale, worth revisiting with real traffic
-    .filter((l) => l.moderationStatus === 'approved')
+  const listings = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
   // featured listings first, newest-first within each group — sorted
   // client-side so this doesn't need its own composite index. A boost that's
   // past its featuredUntil date no longer counts as featured.
