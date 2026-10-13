@@ -77,7 +77,11 @@ service cloud.firestore {
           getAfter(/databases/$(database)/documents/listings/$(listingId)/reviews/$(request.resource.data.lastReviewId)).data.bookingId == request.resource.data.lastReviewId &&
           getAfter(/databases/$(database)/documents/listings/$(listingId)/reviews/$(request.resource.data.lastReviewId)).data.rating is int &&
           getAfter(/databases/$(database)/documents/listings/$(listingId)/reviews/$(request.resource.data.lastReviewId)).data.rating >= 1 &&
-          getAfter(/databases/$(database)/documents/listings/$(listingId)/reviews/$(request.resource.data.lastReviewId)).data.rating <= 5) ||
+          getAfter(/databases/$(database)/documents/listings/$(listingId)/reviews/$(request.resource.data.lastReviewId)).data.rating <= 5 &&
+          request.resource.data.ratingAvg ==
+            ((resource.data.ratingAvg * resource.data.ratingCount +
+              getAfter(/databases/$(database)/documents/listings/$(listingId)/reviews/$(request.resource.data.lastReviewId)).data.rating) /
+              request.resource.data.ratingCount)) ||
         (isAdmin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'active', 'featured', 'featuredUntil', 'moderationStatus', 'ownerVerified'
         ]))
