@@ -1,6 +1,5 @@
 import {
   collection,
-  addDoc,
   updateDoc,
   doc,
   getDocs,
@@ -8,7 +7,6 @@ import {
   where,
   orderBy,
   limit,
-  serverTimestamp,
 } from 'firebase/firestore'
 import { db } from '../firebase'
 import { getFunctions, httpsCallable } from 'firebase/functions'
@@ -58,36 +56,6 @@ export async function hasConflict(listingId, startDate, endDate, requestedQty = 
   return result.data?.available !== true
 }
 
-export async function createBooking({ listingId, listingTitle, ownerId, renterId, renterName, startDate, endDate, totalPrice, quantity, deliveryAddress, deliveryLat, deliveryLon }) {
-  const ref = await addDoc(bookingsRef, {
-    listingId,
-    listingTitle,
-    ownerId,
-    renterId,
-    renterName,
-    startDate,
-    endDate,
-    totalPrice,
-    quantity: quantity || 1,
-    deliveryAddress: deliveryAddress || null,
-    deliveryLat: deliveryLat || null,
-    deliveryLon: deliveryLon || null,
-    status: 'pending', // pending -> confirmed -> completed, or cancelled
-    paid: false,
-    createdAt: serverTimestamp(),
-  })
-
-  createNotification({
-    userId: ownerId,
-    type: 'booking_placed',
-    title: 'New booking request',
-    body: `${renterName} wants to book "${listingTitle}" for ${startDate} → ${endDate}.`,
-    link: '/dashboard',
-  }).catch((e) => console.error('notification failed', e))
-
-  return ref
-}
-
 export async function updateBookingStatus(booking, status, photoBase64) {
   const updates = { status }
   if (status === 'delivered' && photoBase64) updates.deliveryPhotoBase64 = photoBase64
@@ -112,17 +80,6 @@ export async function updateBookingStatus(booking, status, photoBase64) {
       link: '/my-bookings',
     }).catch((e) => console.error('notification failed', e))
   }
-}
-
-export async function markPaid(booking, reference) {
-  await updateDoc(doc(db, 'bookings', booking.id), { paid: true, paymentReference: reference, status: 'confirmed' })
-  createNotification({
-    userId: booking.ownerId,
-    type: 'payment_received',
-    title: 'Payment received',
-    body: `Payment confirmed for "${booking.listingTitle}" — ₦${Number(booking.totalPrice).toLocaleString()}.`,
-    link: '/dashboard',
-  }).catch((e) => console.error('notification failed', e))
 }
 
 export async function getBookingsForRenter(renterId) {
