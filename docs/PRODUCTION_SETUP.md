@@ -9,7 +9,7 @@ Rentora's React client can be deployed to Vercel, but payment verification and p
 3. In that same project, confirm Authentication → Email/Password is enabled. Confirm Google is enabled only if you intend to offer it.
 4. Confirm Cloud Firestore is enabled and inspect the existing data before deploying the stricter rules.
 5. Copy the web app's public Firebase configuration into the Vercel environment variables (and local `.env` for development): `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_STORAGE_BUCKET`, `VITE_FIREBASE_MESSAGING_SENDER_ID`, and `VITE_FIREBASE_APP_ID`.
-5. Set `VITE_PAYSTACK_PUBLIC_KEY` to the Paystack **public** key for the intended environment.
+6. Set `VITE_PAYSTACK_PUBLIC_KEY` to the Paystack **public** key for the intended environment.
 
 Firebase web config values are client identifiers, not server credentials. Do not commit service-account JSON or secret keys.
 
