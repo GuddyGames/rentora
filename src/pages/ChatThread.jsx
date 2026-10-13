@@ -38,8 +38,8 @@ export default function ChatThread() {
   const otherName = conversation && (user.uid === conversation.ownerId ? conversation.renterName : conversation.ownerName)
 
   return (
-    <div className="mx-auto flex h-[calc(100vh-73px)] max-w-2xl flex-col px-5 py-6">
-      <div className="flex items-center gap-3 border-b border-black/10 pb-3">
+    <div className="mx-auto flex h-[calc(100dvh-64px)] min-h-[420px] max-w-2xl flex-col px-3 py-4 sm:h-[calc(100vh-73px)] sm:px-5 sm:py-6">
+      <div className="flex min-w-0 items-center gap-3 border-b border-black/10 pb-3">
         <Link to="/messages" className="text-sm text-midnight/50 hover:text-gold">← Back</Link>
         <div>
           <p className="font-display font-semibold text-midnight">{otherName || (error ? 'Conversation' : '…')}</p>
@@ -72,9 +72,9 @@ export default function ChatThread() {
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="Type a message"
-          className="flex-1 rounded-full border border-black/10 bg-white px-4 py-2.5 text-midnight placeholder:text-midnight/40"
+          className="min-w-0 flex-1 rounded-full border border-black/10 bg-white px-4 py-3 text-base text-midnight placeholder:text-midnight/40"
         />
-        <button type="submit" className="rounded-full bg-gold px-5 py-2.5 font-medium text-midnightdeep hover:brightness-110 transition-colors">
+        <button type="submit" className="shrink-0 rounded-full bg-gold px-4 py-3 font-medium text-midnightdeep hover:brightness-110 transition-colors">
           Send
         </button>
       </form>

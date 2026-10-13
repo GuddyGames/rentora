@@ -55,10 +55,10 @@ export default function Pricing() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-5 py-10">
+    <div className="mx-auto max-w-6xl px-4 py-6 sm:px-5 sm:py-10">
       <BackButton to="/" />
       <p className="font-mono text-xs uppercase tracking-[0.2em] text-gold">Pricing</p>
-      <h1 className="mt-2 font-display text-3xl font-semibold text-midnight">Grow your rental business</h1>
+      <h1 className="mt-2 break-words font-display text-2xl font-semibold text-midnight sm:text-3xl">Grow your rental business</h1>
       <p className="mt-2 max-w-xl text-midnight/60">
         Straightforward pricing — every tier below reflects something that actually works today, not a wishlist.
       </p>

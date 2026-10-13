@@ -143,7 +143,7 @@ export default function Checkout() {
   }
 
   if (items.length === 0) {
-    return <div className="mx-auto max-w-lg px-5 py-16 text-center text-midnight/60">Your cart is empty.</div>
+    return <div className="mx-auto max-w-lg px-4 py-12 text-center text-midnight/60">Your cart is empty.</div>
   }
 
   if (showSuccess) {
@@ -151,13 +151,13 @@ export default function Checkout() {
   }
 
   return (
-    <div className="mx-auto max-w-lg px-5 py-10">
+    <div className="mx-auto max-w-lg px-4 py-6 sm:px-5 sm:py-10">
       <BackButton to="/cart" label="Cart" />
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold">Step 2 of 3</p>
       <h1 className="mt-2 font-display text-3xl font-semibold text-midnight">Delivery & checkout</h1>
       <p className="mt-2 text-sm leading-6 text-midnight/55">Confirm where your rentals should arrive, then review the total before paying.</p>
 
-      <div className="mt-5 flex items-center gap-2 rounded-2xl border border-black/[0.06] bg-white p-3">
+      <div className="mt-5 flex flex-wrap items-center gap-2 rounded-2xl border border-black/[0.06] bg-white p-3 sm:flex-nowrap">
         <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald text-xs font-bold text-white">✓</span>
         <span className="text-xs font-medium text-midnight/55">Cart</span>
         <span className="h-px flex-1 bg-black/10" />
@@ -193,7 +193,7 @@ export default function Checkout() {
           onChange={(e) => { setAddress(e.target.value); setCoords(null); setGeocodeError('') }}
           rows={2}
           placeholder="Where should the equipment be delivered?"
-          className="mt-1 w-full rounded-lg border border-black/10 bg-white px-4 py-2.5 text-midnight placeholder:text-midnight/40"
+          className="mt-1 block w-full min-w-0 rounded-lg border border-black/10 bg-white px-4 py-3 text-base text-midnight placeholder:text-midnight/40"
         />
       </label>
 

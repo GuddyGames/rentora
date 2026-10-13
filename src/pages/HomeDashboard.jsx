@@ -72,14 +72,14 @@ export default function HomeDashboard() {
   }, [user, isOwner])
 
   return (
-    <div className="aurora-bg min-h-[calc(100vh-57px)] px-5 py-8">
+    <div className="aurora-bg min-h-[calc(100vh-57px)] px-4 py-5 sm:px-5 sm:py-8">
       <div className="mx-auto max-w-6xl">
         {/* greeting + search */}
-        <div className="ios-glass rounded-3xl p-6 md:p-8">
+        <div className="ios-glass rounded-3xl p-4 sm:p-6 md:p-8">
           <p className="font-display text-xl text-midnight/80 md:text-2xl">
             {greeting()}{profile?.name ? `, ${profile.name.split(' ')[0]}` : ''} 👋
           </p>
-          <h1 className="mt-1 font-display text-2xl font-semibold text-midnight md:text-4xl">
+          <h1 className="mt-1 break-words font-display text-2xl font-semibold text-midnight sm:text-3xl md:text-4xl">
             What are you <span className="text-gold">planning</span> today?
           </h1>
           <form onSubmit={handleSearch} className="mt-6 max-w-xl">

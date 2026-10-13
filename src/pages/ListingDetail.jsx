@@ -115,9 +115,9 @@ export default function ListingDetail() {
   if (!listing) return <div className="mx-auto max-w-4xl px-5 py-16 text-midnight/60">Listing not found.</div>
 
   return (
-    <div className="mx-auto max-w-4xl px-5 py-10">
+    <div className="mx-auto max-w-6xl px-4 py-5 sm:px-5 sm:py-8 lg:py-10">
       <BackButton to="/browse" label="Browse" />
-      <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+      <div className="grid min-w-0 grid-cols-1 gap-5 md:grid-cols-[minmax(0,1fr)_minmax(300px,.8fr)] md:gap-8">
         <div>
           <div className="aspect-video overflow-hidden rounded-2xl bg-card/10">
             {listing.imageBase64 ? (
@@ -132,7 +132,7 @@ export default function ListingDetail() {
               <p className="text-sm text-midnight/60">★ {listing.ratingAvg.toFixed(1)} ({listing.ratingCount})</p>
             )}
           </div>
-          <h1 className="mt-1 font-display text-3xl font-semibold text-midnight">{listing.title}</h1>
+          <h1 className="mt-1 break-words font-display text-2xl font-semibold leading-tight text-midnight sm:text-3xl">{listing.title}</h1>
           <p className="mt-1 text-midnight/60">{listing.location}</p>
           <p className="mt-4 text-midnight/80">{listing.description}</p>
           <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -201,7 +201,7 @@ export default function ListingDetail() {
           )}
         </div>
 
-        <div className="h-fit rounded-2xl border border-black/10 bg-white p-6">
+        <div className="h-fit min-w-0 rounded-2xl border border-black/10 bg-white p-4 sm:p-6 md:sticky md:top-24">
           <div className="font-mono text-2xl font-semibold text-gold">
             ₦{Number(listing.pricePerDay).toLocaleString()}
             <span className="text-sm text-midnight/50"> / day</span>
@@ -220,7 +220,7 @@ export default function ListingDetail() {
                 type="date"
                 value={startDate}
                 onChange={(e) => { setStartDate(e.target.value); setStatus('') }}
-                className="mt-1 w-full rounded-lg border border-black/10 bg-mist px-3 py-2 text-midnight"
+                className="mt-1 block w-full min-w-0 rounded-lg border border-black/10 bg-mist px-3 py-3 text-base text-midnight"
               />
             </label>
             <label className="block text-sm text-midnight/70">
@@ -249,14 +249,14 @@ export default function ListingDetail() {
             <button
               onClick={handleCheckAvailability}
               disabled={status === 'checking'}
-              className="mt-5 w-full rounded-full bg-card px-5 py-3 font-medium text-midnightdeep transition-colors hover:brightness-110 disabled:opacity-60"
+              className="mt-5 min-h-12 w-full rounded-full bg-card px-4 py-3 font-medium text-midnightdeep transition-colors hover:brightness-110 disabled:opacity-60"
             >
               {status === 'checking' ? 'Checking…' : 'Check availability'}
             </button>
           ) : (
             <button
               onClick={handleAddToCart}
-              className="mt-5 w-full rounded-full bg-gold px-5 py-3 font-medium text-midnightdeep transition-colors hover:brightness-110"
+              className="mt-5 min-h-12 w-full rounded-full bg-gold px-4 py-3 font-medium text-midnightdeep transition-colors hover:brightness-110"
             >
               Add to cart — ₦{totalPrice.toLocaleString()}
             </button>

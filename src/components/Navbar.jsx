@@ -69,8 +69,10 @@ export default function Navbar() {
           </Link>
           <button
             onClick={() => setMenuOpen((v) => !v)}
-            aria-label="Menu"
-            className="rounded-full p-2 text-midnight/70 hover:text-gold"
+            aria-label={menuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+            aria-expanded={menuOpen}
+            aria-controls="rentora-mobile-navigation"
+            className="flex h-10 w-10 items-center justify-center rounded-full p-2 text-midnight/70 hover:bg-black/5 hover:text-gold"
           >
             <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2">
               {menuOpen ? (
@@ -85,7 +87,7 @@ export default function Navbar() {
 
       {/* mobile dropdown menu */}
       {menuOpen && (
-        <nav className="flex flex-col gap-1 border-t border-black/5 bg-mist px-4 py-3 font-body text-sm text-midnight md:hidden">
+        <nav id="rentora-mobile-navigation" aria-label="Mobile navigation" className="flex max-h-[calc(100dvh-64px)] flex-col gap-1 overflow-y-auto border-t border-black/5 bg-mist px-4 py-3 pb-[max(1rem,env(safe-area-inset-bottom))] font-body text-sm text-midnight md:hidden">
           <Link to="/browse" onClick={() => setMenuOpen(false)} className="rounded-lg px-2 py-2.5 hover:bg-black/5">Browse</Link>
           <Link to="/plan" onClick={() => setMenuOpen(false)} className="rounded-lg px-2 py-2.5 hover:bg-black/5">Plan my event</Link>
           <Link to="/pricing" onClick={() => setMenuOpen(false)} className="rounded-lg px-2 py-2.5 hover:bg-black/5">Pricing</Link>
