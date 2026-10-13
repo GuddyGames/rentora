@@ -85,6 +85,9 @@ export default function Checkout() {
     let createdBookings = []
 
     try {
+      // Bind this checkout to the pending bookings before opening Paystack.
+      // The server later verifies this exact reference, not just a matching amount.
+      const reference = `rentora-${user.uid.slice(0, 8)}-${Date.now()}`
       for (const item of items) {
         const qty = Number(item.qty || 1)
         const maxQty = Number(item.maxQty || 1)
@@ -96,6 +99,7 @@ export default function Checkout() {
 
       const createBookings = httpsCallable(getFunctions(), 'createPendingBookings')
       const bookingResult = await createBookings({
+        reference,
         items: items.map((item) => ({
           listingId: item.listingId,
           qty: Number(item.qty || 1),
@@ -111,7 +115,6 @@ export default function Checkout() {
       createdBookings = bookingResult.data.bookingIds.map((id) => ({ id }))
       if (!createdBookings.length) throw new Error('No bookings were created. Please try again.')
 
-      const reference = `rentora-${user.uid.slice(0, 8)}-${Date.now()}`
       const handler = window.PaystackPop.setup({
         key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY,
         email: user.email,
