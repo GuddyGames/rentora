@@ -10,7 +10,7 @@ import AddressMap from '../components/AddressMap'
 import BackButton from '../components/BackButton'
 
 export default function Checkout() {
-  const { items, total, clearCart } = useCart()
+  const { items, clearCart } = useCart()
   const { user } = useAuth()
   const navigate = useNavigate()
 
@@ -103,6 +103,8 @@ export default function Checkout() {
           endDate: item.endDate,
         })),
         deliveryAddress: address.trim(),
+        deliveryLat: coords?.lat ?? null,
+        deliveryLon: coords?.lon ?? null,
         couponCode: discountPercent > 0 ? couponCode.trim().toUpperCase() : '',
         expectedTotal: payableTotal,
       })
