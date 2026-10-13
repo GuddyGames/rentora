@@ -104,3 +104,42 @@ exports.verifyPaystackPayment = onCall(
     return { verified: true, reference, bookingIds, amount: Number(transaction.amount) }
   }
 )
+
+
+/** Availability lookup without exposing other customers' booking records. */
+exports.checkListingAvailability = onCall(async (request) => {
+  if (!request.auth) throw new HttpsError('unauthenticated', 'Please sign in to check availability.')
+  const { listingId, startDate, endDate, requestedQty = 1, totalQty = 1 } = request.data || {}
+  if (typeof listingId !== 'string' || !listingId || typeof startDate !== 'string' ||
+      typeof endDate !== 'string' || !Number.isInteger(requestedQty) || !Number.isInteger(totalQty) ||
+      requestedQty < 1 || totalQty < 1 || requestedQty > totalQty ||
+      !Number.isFinite(Date.parse(startDate)) || !Number.isFinite(Date.parse(endDate)) ||
+      Date.parse(startDate) > Date.parse(endDate)) {
+    throw new HttpsError('invalid-argument', 'Invalid listing or rental dates.')
+  }
+
+  const listingSnap = await db.collection('listings').doc(listingId).get()
+  if (!listingSnap.exists || listingSnap.data().active !== true || listingSnap.data().moderationStatus !== 'approved') {
+    throw new HttpsError('not-found', 'This listing is not currently available.')
+  }
+  const actualTotal = Number(listingSnap.data().quantity || 1)
+  if (requestedQty > actualTotal || totalQty !== actualTotal) {
+    throw new HttpsError('failed-precondition', 'The requested quantity does not match the current listing availability.')
+  }
+
+  const snap = await db.collection('bookings')
+    .where('listingId', '==', listingId)
+    .where('status', 'in', ['pending', 'confirmed', 'preparing', 'delivered', 'event_active'])
+    .get()
+  const start = Date.parse(startDate)
+  const end = Date.parse(endDate)
+  const reserved = snap.docs.reduce((sum, doc) => {
+    const booking = doc.data()
+    const from = Date.parse(booking.startDate)
+    const to = Date.parse(booking.endDate)
+    return Number.isFinite(from) && Number.isFinite(to) && start <= to && end >= from
+      ? sum + Number(booking.quantity || 1)
+      : sum
+  }, 0)
+  return { available: reserved + requestedQty <= actualTotal, remaining: Math.max(0, actualTotal - reserved) }
+})
