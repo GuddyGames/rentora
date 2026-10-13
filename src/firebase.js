@@ -12,6 +12,16 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 }
 
+const missingConfig = Object.entries(firebaseConfig)
+  .filter(([, value]) => typeof value !== 'string' || !value.trim())
+  .map(([key]) => key)
+
+if (missingConfig.length) {
+  throw new Error(
+    `Rentora Firebase configuration is incomplete. Set these Vite environment variables: ${missingConfig.map((key) => `VITE_FIREBASE_${key.replace(/[A-Z]/g, (letter) => `_${letter}`).toUpperCase()}`).join(', ')}`
+  )
+}
+
 const app = initializeApp(firebaseConfig)
 
 export const auth = getAuth(app)
