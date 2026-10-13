@@ -98,6 +98,24 @@ exports.verifyPaystackPayment = onCall(
           status: 'confirmed',
           paymentVerifiedAt: FieldValue.serverTimestamp(),
         })
+        tx.set(db.collection('notifications').doc(), {
+          userId: booking.ownerId,
+          type: 'payment_received',
+          title: 'Payment received',
+          body: `Payment verified for "${booking.listingTitle}" — ₦${Number(booking.totalPrice).toLocaleString()}.`,
+          link: '/dashboard',
+          read: false,
+          createdAt: FieldValue.serverTimestamp(),
+        })
+        tx.set(db.collection('notifications').doc(), {
+          userId: booking.renterId,
+          type: 'booking_confirmed',
+          title: 'Booking confirmed',
+          body: `Your payment for "${booking.listingTitle}" has been verified.`,
+          link: '/my-bookings',
+          read: false,
+          createdAt: FieldValue.serverTimestamp(),
+        })
       }
     })
 
