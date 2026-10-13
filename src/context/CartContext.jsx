@@ -22,7 +22,12 @@ export function CartProvider({ children }) {
   })
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
+    } catch (error) {
+      // Keep the in-memory cart usable when storage is full or unavailable.
+      console.warn('Rentora could not persist the cart on this device', error)
+    }
   }, [items])
 
   function addToCart(listing, startDate, endDate) {
