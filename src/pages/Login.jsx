@@ -47,8 +47,8 @@ export default function Login() {
   }
 
   return (
-    <div className="mx-auto max-w-sm px-5 py-16">
-      <h1 className="font-display text-3xl font-semibold text-midnight">Log in</h1>
+    <div className="mx-auto max-w-sm px-4 py-8 sm:px-5 sm:py-14 md:py-16">
+      <h1 className="font-display text-2xl font-semibold text-midnight sm:text-3xl">Log in</h1>
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">
         <input
           type="email"
@@ -66,7 +66,7 @@ export default function Login() {
           onChange={(e) => setPassword(e.target.value)}
           className="w-full rounded-lg border border-black/10 bg-white px-4 py-2.5 text-midnight placeholder:text-midnight/40"
         />
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <span />
           <button type="button" onClick={handleForgotPassword} disabled={resetBusy} className="text-sm text-royal hover:underline disabled:opacity-60">
             {resetBusy ? 'Sending…' : 'Forgot password?'}
