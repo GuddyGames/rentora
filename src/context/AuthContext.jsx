@@ -31,13 +31,35 @@ export function AuthProvider({ children }) {
 
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser)
-      if (firebaseUser) {
-        const snap = await getDoc(doc(db, 'users', firebaseUser.uid))
-        setProfile(snap.exists() ? snap.data() : null)
-      } else {
+      setLoading(true)
+      try {
+        if (!firebaseUser) {
+          setProfile(null)
+          return
+        }
+
+        const profileRef = doc(db, 'users', firebaseUser.uid)
+        const snap = await getDoc(profileRef)
+        if (snap.exists()) {
+          setProfile(snap.data())
+        } else {
+          // Google sign-in users may not have a profile document yet. Give
+          // them the least-privileged role; they can choose vendor setup later.
+          const defaultProfile = {
+            name: firebaseUser.displayName || '',
+            email: firebaseUser.email || '',
+            role: 'renter',
+            createdAt: serverTimestamp(),
+          }
+          await setDoc(profileRef, defaultProfile)
+          setProfile(defaultProfile)
+        }
+      } catch (error) {
+        console.error('Could not load account profile', error)
         setProfile(null)
+      } finally {
+        setLoading(false)
       }
-      setLoading(false)
     })
     return unsub
   }, [])
@@ -56,6 +78,7 @@ export function AuthProvider({ children }) {
   }, [user])
 
   async function signup({ name, email, password, role }) {
+    if (!['renter', 'owner'].includes(role)) throw new Error('Choose renter or equipment owner.')
     const cred = await createUserWithEmailAndPassword(auth, email, password)
     const userDoc = {
       name,

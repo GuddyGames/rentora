@@ -56,7 +56,7 @@ export default function HomeGuest() {
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-mist/70">
             Canopies, chairs, sound systems, lighting and more — rented from real people near you.
-            Create a free account to browse, book, and get an instant checklist for your event.
+            Browse equipment first, then create a free account when you’re ready to book or plan your event.
           </p>
 
           <div className="mt-8 flex flex-wrap justify-center gap-3">
@@ -67,8 +67,14 @@ export default function HomeGuest() {
               Create free account
             </Link>
             <Link
-              to="/login"
+              to="/browse"
               className="rounded-full border border-white/25 px-8 py-3.5 font-medium text-mist transition-colors hover:border-gold hover:text-gold"
+            >
+              Browse equipment
+            </Link>
+            <Link
+              to="/login"
+              className="rounded-full border border-white/15 px-8 py-3.5 font-medium text-mist/80 transition-colors hover:border-white/40 hover:text-white"
             >
               Log in
             </Link>

@@ -1,6 +1,5 @@
 import {
   collection,
-  addDoc,
   updateDoc,
   doc,
   getDocs,
@@ -8,9 +7,9 @@ import {
   where,
   orderBy,
   limit,
-  serverTimestamp,
 } from 'firebase/firestore'
 import { db } from '../firebase'
+import { getFunctions, httpsCallable } from 'firebase/functions'
 import { createNotification } from './notifications'
 
 const bookingsRef = collection(db, 'bookings')
@@ -46,54 +45,15 @@ export function nextStatus(currentStatus) {
 // — the real risk — never actually verified enough units existed for
 // larger quantities either.
 export async function hasConflict(listingId, startDate, endDate, requestedQty = 1, totalQty = 1) {
-  const q = query(
-    bookingsRef,
-    where('listingId', '==', listingId),
-    where('status', 'in', ['pending', 'confirmed'])
-  )
-  const snap = await getDocs(q)
-  const start = new Date(startDate).getTime()
-  const end = new Date(endDate).getTime()
-
-  const overlappingQty = snap.docs.reduce((sum, d) => {
-    const b = d.data()
-    const bStart = new Date(b.startDate).getTime()
-    const bEnd = new Date(b.endDate).getTime()
-    const overlaps = start <= bEnd && end >= bStart
-    return overlaps ? sum + (b.quantity || 1) : sum
-  }, 0)
-
-  return overlappingQty + requestedQty > totalQty
-}
-
-export async function createBooking({ listingId, listingTitle, ownerId, renterId, renterName, startDate, endDate, totalPrice, quantity, deliveryAddress, deliveryLat, deliveryLon }) {
-  const ref = await addDoc(bookingsRef, {
+  const checkAvailability = httpsCallable(getFunctions(), 'checkListingAvailability')
+  const result = await checkAvailability({
     listingId,
-    listingTitle,
-    ownerId,
-    renterId,
-    renterName,
     startDate,
     endDate,
-    totalPrice,
-    quantity: quantity || 1,
-    deliveryAddress: deliveryAddress || null,
-    deliveryLat: deliveryLat || null,
-    deliveryLon: deliveryLon || null,
-    status: 'pending', // pending -> confirmed -> completed, or cancelled
-    paid: false,
-    createdAt: serverTimestamp(),
+    requestedQty: Number(requestedQty),
+    totalQty: Number(totalQty),
   })
-
-  createNotification({
-    userId: ownerId,
-    type: 'booking_placed',
-    title: 'New booking request',
-    body: `${renterName} wants to book "${listingTitle}" for ${startDate} → ${endDate}.`,
-    link: '/dashboard',
-  }).catch((e) => console.error('notification failed', e))
-
-  return ref
+  return result.data?.available !== true
 }
 
 export async function updateBookingStatus(booking, status, photoBase64) {
@@ -120,17 +80,6 @@ export async function updateBookingStatus(booking, status, photoBase64) {
       link: '/my-bookings',
     }).catch((e) => console.error('notification failed', e))
   }
-}
-
-export async function markPaid(booking, reference) {
-  await updateDoc(doc(db, 'bookings', booking.id), { paid: true, paymentReference: reference, status: 'confirmed' })
-  createNotification({
-    userId: booking.ownerId,
-    type: 'payment_received',
-    title: 'Payment received',
-    body: `Payment confirmed for "${booking.listingTitle}" — ₦${Number(booking.totalPrice).toLocaleString()}.`,
-    link: '/dashboard',
-  }).catch((e) => console.error('notification failed', e))
 }
 
 export async function getBookingsForRenter(renterId) {

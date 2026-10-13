@@ -33,7 +33,7 @@ Deploy to Vercel as usual — `vercel --prod`, and add the same env vars in the 
 - **Reviews**: stored in a `listings/{id}/reviews` subcollection, tied to a specific `bookingId` so a renter can only review a booking once. Submitting one rolls a running average into `ratingAvg`/`ratingCount` on the listing via a Firestore transaction.
 - **Messaging**: one conversation per (listing, renter) pair, id'd as `{listingId}_{renterId}`. Text-only for now — no photos/voice notes. `src/services/chat.js` handles it with `onSnapshot` for live updates.
 - **Event checklist**: `src/utils/eventChecklist.js` is a rule-of-thumb generator (not a real AI model) — guest count and event type map to suggested categories and quantities. `PlanEvent.jsx` then pulls live average pricing per category from Firestore so the estimate reflects what's actually listed.
-- **Payments**: Paystack Inline JS, loaded via CDN script in `index.html`. A booking is created as `pending` first, then marked `paid`/`confirmed` on successful checkout.
+- **Payments**: Paystack Inline JS is loaded from the official CDN. The browser callback is not trusted to confirm payment; `functions/verifyPaystackPayment` verifies the transaction with Paystack's API and checks the exact total and booking ownership before setting `paid`/`confirmed`. Configure `PAYSTACK_SECRET_KEY` as a Firebase Functions secret and deploy functions before checkout can complete.
 - **Admin panel** (`/admin`): platform stats, listing moderation (hide/feature/delete any listing), user moderation (restrict/restore accounts), a payments view across every booking, and a disputes queue. Nobody can sign up as admin — it's not a role choice on the signup form. To make yourself admin: open Firebase console → Firestore → `users` collection → find your own user document (matches your auth uid) → add a field `isAdmin` set to boolean `true`. Reload the app and an "Admin control room" row appears in your Account page.
 - **Disputes**: either party can file one from `My Bookings` ("Report an issue") with an optional photo. Admin resolves them from `/admin/disputes`.
 - **Delivery/return photos**: owners can attach a condition photo when marking a booking "delivered" or "returned" from the Dashboard — this is the honest, in-house substitute for a real insurance product. It's documentation, not a payout guarantee.
@@ -103,3 +103,14 @@ A ChatGPT review of the project raised 27 points. Here's what was real and fixed
 - **Plan My Event now persists** to `localStorage` — leaving the page and coming back restores your step, answers, and edited checklist. "Start over" clears it deliberately.
 - **Shared icon set** (`components/icons.jsx`): consistent stroke-based icons now used across the nav, dashboard quick actions, and Account page, replacing the mismatched emoji that were there as placeholders. Category/event emoji (🎉🪑🎂 etc.) are kept — they're still the clearest way to label dozens of real-world item types.
 - **Fixed listing card alignment**: the Featured badge and category badge were both wide enough to collide on a narrow 2-column mobile grid; the price section was wide enough to squeeze titles down to one visible letter. Badges are now icon-first, and the card layout is stacked (title, then location, then price) instead of a cramped side-by-side row.
+
+
+## Production hardening and deployment
+
+See [docs/PRODUCTION_SETUP.md](docs/PRODUCTION_SETUP.md) for Firebase, Paystack, Vercel, and pre-launch verification steps.
+
+- Marketplace browse and listing detail pages are public; signing in is required for booking actions.
+- Booking records are private to the renter, listing owner, and admin.
+- Availability checks use a callable Cloud Function and return aggregate availability only.
+- Browser clients cannot set payment verification fields. Payment verification must be deployed before enabling real payments.
+- `firestore.rules` is source control, not the currently deployed policy; deploy it to Firebase and verify the live rules before launch.
