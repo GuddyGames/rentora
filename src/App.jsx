@@ -31,151 +31,44 @@ export default function App() {
   return (
     <div className="flex min-h-screen flex-col bg-mist">
       <Navbar />
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route
-          path="/browse"
-          element={
-            <ProtectedRoute>
-              <Browse />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/listing/:id"
-          element={
-            <ProtectedRoute>
-              <ListingDetail />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/plan"
-          element={
-            <ProtectedRoute>
-              <PlanEvent />
-            </ProtectedRoute>
-          }
-        />
-        <Route path="/pricing" element={<Pricing />} />
-        <Route path="/privacy" element={<Privacy />} />
-        <Route path="/terms" element={<Terms />} />
-        <Route path="/refund-policy" element={<RefundPolicy />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute requireRole="owner">
-              <Dashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/add-listing"
-          element={
-            <ProtectedRoute requireRole="owner">
-              <AddListing />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/my-bookings"
-          element={
-            <ProtectedRoute requireRole="renter">
-              <MyBookings />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/cart"
-          element={
-            <ProtectedRoute>
-              <Cart />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/account"
-          element={
-            <ProtectedRoute>
-              <Account />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/checkout"
-          element={
-            <ProtectedRoute>
-              <Checkout />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/messages"
-          element={
-            <ProtectedRoute>
-              <Messages />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/messages/:id"
-          element={
-            <ProtectedRoute>
-              <ChatThread />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin"
-          element={
-            <ProtectedRoute requireAdmin>
-              <AdminDashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/listings"
-          element={
-            <ProtectedRoute requireAdmin>
-              <AdminListings />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/users"
-          element={
-            <ProtectedRoute requireAdmin>
-              <AdminUsers />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/bookings"
-          element={
-            <ProtectedRoute requireAdmin>
-              <AdminBookings />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/disputes"
-          element={
-            <ProtectedRoute requireAdmin>
-              <AdminDisputes />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/audit-log"
-          element={
-            <ProtectedRoute requireAdmin>
-              <AdminAuditLog />
-            </ProtectedRoute>
-          }
-        />
-      </Routes>
+      <main className="flex-1">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/browse" element={<Browse />} />
+          <Route path="/listing/:id" element={<ListingDetail />} />
+          <Route path="/pricing" element={<Pricing />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/refund-policy" element={<RefundPolicy />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+
+          <Route path="/plan" element={<ProtectedRoute><PlanEvent /></ProtectedRoute>} />
+          <Route path="/dashboard" element={<ProtectedRoute requireRole="owner"><Dashboard /></ProtectedRoute>} />
+          <Route path="/add-listing" element={<ProtectedRoute requireRole="owner"><AddListing /></ProtectedRoute>} />
+          <Route path="/my-bookings" element={<ProtectedRoute requireRole="renter"><MyBookings /></ProtectedRoute>} />
+          <Route path="/cart" element={<ProtectedRoute><Cart /></ProtectedRoute>} />
+          <Route path="/account" element={<ProtectedRoute><Account /></ProtectedRoute>} />
+          <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
+          <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
+          <Route path="/messages/:id" element={<ProtectedRoute><ChatThread /></ProtectedRoute>} />
+
+          <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
+          <Route path="/admin/listings" element={<ProtectedRoute requireAdmin><AdminListings /></ProtectedRoute>} />
+          <Route path="/admin/users" element={<ProtectedRoute requireAdmin><AdminUsers /></ProtectedRoute>} />
+          <Route path="/admin/bookings" element={<ProtectedRoute requireAdmin><AdminBookings /></ProtectedRoute>} />
+          <Route path="/admin/disputes" element={<ProtectedRoute requireAdmin><AdminDisputes /></ProtectedRoute>} />
+          <Route path="/admin/audit-log" element={<ProtectedRoute requireAdmin><AdminAuditLog /></ProtectedRoute>} />
+          <Route path="*" element={
+            <div className="mx-auto max-w-xl px-5 py-20 text-center">
+              <p className="font-mono text-xs uppercase tracking-[0.18em] text-gold">404 · Page not found</p>
+              <h1 className="mt-3 font-display text-3xl font-semibold text-midnight">We can’t find that page</h1>
+              <p className="mt-2 text-sm text-midnight/60">The link may be old, or the page may have moved.</p>
+              <a href="/browse" className="mt-6 inline-flex rounded-full bg-gold px-6 py-3 font-semibold text-midnight">Browse equipment</a>
+            </div>
+          } />
+        </Routes>
+      </main>
       <Footer />
     </div>
   )
