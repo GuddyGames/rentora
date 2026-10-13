@@ -18,8 +18,8 @@ export default function Messages() {
   }, [user])
 
   return (
-    <div className="mx-auto max-w-2xl px-5 py-10">
-      <h1 className="font-display text-3xl font-semibold text-midnight">Messages</h1>
+    <div className="mx-auto max-w-2xl px-4 py-6 sm:px-5 sm:py-10">
+      <h1 className="break-words font-display text-2xl font-semibold text-midnight sm:text-3xl">Messages</h1>
 
       {loading ? (
         <p className="mt-10 text-midnight/60">Loading…</p>
@@ -37,7 +37,7 @@ export default function Messages() {
                 to={`/messages/${c.id}`}
                 className="block rounded-xl border border-black/10 bg-white p-4 hover:border-gold transition-colors"
               >
-                <p className="font-display font-semibold text-midnight">{otherName}</p>
+                <p className="break-words font-display font-semibold text-midnight">{otherName}</p>
                 <p className="text-sm text-midnight/50">{c.listingTitle}</p>
                 {c.lastMessage && <p className="mt-1 truncate text-sm text-midnight/70">{c.lastMessage}</p>}
               </Link>
