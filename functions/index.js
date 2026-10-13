@@ -225,118 +225,144 @@ exports.createPendingBookings = onCall(async (request) => {
 
   const now = Date.now()
   const expiry = now + 15 * 60 * 1000
-  const listings = await Promise.all(normalizedItems.map((item) => db.collection('listings').doc(item.listingId).get()))
-  const bookings = []
-  let total = 0
+  const refs = normalizedItems.map(() => db.collection('bookings').doc())
+  const notificationRefs = normalizedItems.map(() => db.collection('notifications').doc())
 
-  for (let i = 0; i < normalizedItems.length; i += 1) {
-    const item = normalizedItems[i]
-    const listingSnap = listings[i]
-    if (!listingSnap.exists) throw new HttpsError('not-found', 'An item in your cart no longer exists.')
-    const listing = listingSnap.data()
-    if (listing.active !== true || listing.moderationStatus !== 'approved') {
-      throw new HttpsError('failed-precondition', 'An item in your cart is no longer available.')
-    }
-    if (listing.ownerId === request.auth.uid) {
-      throw new HttpsError('failed-precondition', 'You cannot rent your own listing.')
-    }
-    const pricePerDay = Number(listing.pricePerDay)
-    const quantity = Number(listing.quantity || 1)
-    if (!Number.isFinite(pricePerDay) || pricePerDay <= 0 || !Number.isInteger(quantity) || quantity < 1 || item.qty > quantity) {
-      throw new HttpsError('failed-precondition', 'An item in your cart has invalid pricing or quantity.')
+  // All availability reads and booking writes happen in one transaction.
+  // If two checkouts race for the final units, Firestore retries one against
+  // the updated reservation set instead of allowing an overbooking.
+  const result = await db.runTransaction(async (tx) => {
+    const existingReference = await tx.get(
+      db.collection('bookings').where('paymentReference', '==', reference).limit(1)
+    )
+    if (!existingReference.empty) {
+      throw new HttpsError('already-exists', 'This checkout reference has already been used. Please restart checkout.')
     }
 
-    const start = Date.parse(item.startDate)
-    const end = Date.parse(item.endDate)
-    const days = Math.floor((end - start) / 86400000) + 1
-    if (days < 1 || days > 365) throw new HttpsError('invalid-argument', 'Rental periods must be between 1 and 365 days.')
+    const listingSnaps = await Promise.all(
+      normalizedItems.map((item) => tx.get(db.collection('listings').doc(item.listingId)))
+    )
+    const reservationSnaps = await Promise.all(
+      normalizedItems.map((item) => tx.get(
+        db.collection('bookings')
+          .where('listingId', '==', item.listingId)
+          .where('status', 'in', ['pending', 'confirmed', 'preparing', 'delivered', 'event_active'])
+      ))
+    )
 
-    const reservationSnap = await db.collection('bookings')
-      .where('listingId', '==', item.listingId)
-      .where('status', 'in', ['pending', 'confirmed', 'preparing', 'delivered', 'event_active'])
-      .get()
-    const reservedQty = reservationSnap.docs.reduce((sum, doc) => {
-      const booking = doc.data()
-      if (booking.status === 'pending' && booking.paymentExpiresAt &&
-          typeof booking.paymentExpiresAt.toMillis === 'function' &&
-          booking.paymentExpiresAt.toMillis() <= now) return sum
-      const bookingStart = Date.parse(booking.startDate)
-      const bookingEnd = Date.parse(booking.endDate)
-      return Number.isFinite(bookingStart) && Number.isFinite(bookingEnd) &&
-        start <= bookingEnd && end >= bookingStart
-        ? sum + Number(booking.quantity || 1)
-        : sum
-    }, 0)
-    if (reservedQty + item.qty > quantity) {
-      throw new HttpsError('failed-precondition', 'An item in your cart is no longer available for those dates and quantity.')
+    const bookings = []
+    let total = 0
+    for (let i = 0; i < normalizedItems.length; i += 1) {
+      const item = normalizedItems[i]
+      const listingSnap = listingSnaps[i]
+      if (!listingSnap.exists) throw new HttpsError('not-found', 'An item in your cart no longer exists.')
+      const listing = listingSnap.data()
+      if (listing.active !== true || listing.moderationStatus !== 'approved') {
+        throw new HttpsError('failed-precondition', 'An item in your cart is no longer available.')
+      }
+      if (listing.ownerId === request.auth.uid) {
+        throw new HttpsError('failed-precondition', 'You cannot rent your own listing.')
+      }
+
+      const pricePerDay = Number(listing.pricePerDay)
+      const quantity = Number(listing.quantity || 1)
+      if (!Number.isFinite(pricePerDay) || pricePerDay <= 0 ||
+          !Number.isInteger(quantity) || quantity < 1 || item.qty > quantity) {
+        throw new HttpsError('failed-precondition', 'An item in your cart has invalid pricing or quantity.')
+      }
+
+      const start = Date.parse(item.startDate)
+      const end = Date.parse(item.endDate)
+      const days = Math.floor((end - start) / 86400000) + 1
+      if (days < 1 || days > 365) {
+        throw new HttpsError('invalid-argument', 'Rental periods must be between 1 and 365 days.')
+      }
+
+      const reservedQty = reservationSnaps[i].docs.reduce((sum, doc) => {
+        const booking = doc.data()
+        if (booking.status === 'pending' && booking.paymentExpiresAt &&
+            typeof booking.paymentExpiresAt.toMillis === 'function' &&
+            booking.paymentExpiresAt.toMillis() <= now) return sum
+        const bookingStart = Date.parse(booking.startDate)
+        const bookingEnd = Date.parse(booking.endDate)
+        return Number.isFinite(bookingStart) && Number.isFinite(bookingEnd) &&
+          start <= bookingEnd && end >= bookingStart
+          ? sum + Number(booking.quantity || 1)
+          : sum
+      }, 0)
+      if (reservedQty + item.qty > quantity) {
+        throw new HttpsError('failed-precondition', 'An item in your cart is no longer available for those dates and quantity.')
+      }
+
+      const rentalTotal = Math.round(pricePerDay * days * item.qty * (1 - discountPercent / 100))
+      const deliveryCost = Math.max(0, Number(listing.deliveryCost) || 0)
+      const securityDeposit = Math.max(0, Number(listing.securityDeposit) || 0)
+      const bookingTotal = rentalTotal + deliveryCost + securityDeposit * item.qty
+      if (!Number.isFinite(bookingTotal) || bookingTotal <= 0) {
+        throw new HttpsError('failed-precondition', 'The total for an item in your cart is invalid.')
+      }
+
+      total += bookingTotal
+      bookings.push({
+        ...item,
+        ownerId: listing.ownerId,
+        ownerName: listing.ownerName || '',
+        listingTitle: listing.title || 'Equipment',
+        pricePerDay,
+        days,
+        totalPrice: bookingTotal,
+        quantity: item.qty,
+        deliveryCost,
+        securityDeposit,
+        deliveryAddress: deliveryAddress.trim(),
+        deliveryLat: deliveryLat === null ? null : Number(deliveryLat),
+        deliveryLon: deliveryLon === null ? null : Number(deliveryLon),
+      })
     }
 
-    const rentalTotal = Math.round(pricePerDay * days * item.qty * (1 - discountPercent / 100))
-    const deliveryCost = Math.max(0, Number(listing.deliveryCost) || 0)
-    const securityDeposit = Math.max(0, Number(listing.securityDeposit) || 0)
-    const bookingTotal = rentalTotal + deliveryCost + securityDeposit * item.qty
-    if (!Number.isFinite(bookingTotal) || bookingTotal <= 0) {
-      throw new HttpsError('failed-precondition', 'The total for an item in your cart is invalid.')
+    if (Math.round(total * 100) !== Math.round(Number(expectedTotal) * 100)) {
+      throw new HttpsError('failed-precondition', 'A listing price, delivery fee, deposit, or coupon changed. Refresh your cart and review the updated total before paying.')
     }
-    total += bookingTotal
-    bookings.push({
-      ...item,
-      ownerId: listing.ownerId,
-      ownerName: listing.ownerName || '',
-      listingTitle: listing.title || 'Equipment',
-      pricePerDay,
-      days,
-      totalPrice: bookingTotal,
-      quantity: item.qty,
-      deliveryCost,
-      securityDeposit,
-      deliveryAddress: deliveryAddress.trim(),
-      deliveryLat: deliveryLat === null ? null : Number(deliveryLat),
-      deliveryLon: deliveryLon === null ? null : Number(deliveryLon),
-    })
-  }
 
-  if (Math.round(total * 100) !== Math.round(Number(expectedTotal) * 100)) {
-    throw new HttpsError('failed-precondition', 'A listing price, delivery fee, deposit, or coupon changed. Refresh your cart and review the updated total before paying.')
-  }
+    // Do not perform writes until every transaction read and validation above
+    // has completed; Firestore requires all transaction reads to precede writes.
+    for (let i = 0; i < bookings.length; i += 1) {
+      const booking = bookings[i]
+      tx.set(notificationRefs[i], {
+        userId: booking.ownerId,
+        type: 'booking_placed',
+        title: 'New booking request',
+        body: `${request.auth.token.name || request.auth.token.email || 'A renter'} wants to book "${booking.listingTitle}" for ${booking.startDate} → ${booking.endDate}.`,
+        link: '/dashboard',
+        read: false,
+        createdAt: FieldValue.serverTimestamp(),
+      })
+      tx.create(refs[i], {
+        listingId: booking.listingId,
+        listingTitle: booking.listingTitle,
+        ownerId: booking.ownerId,
+        renterId: request.auth.uid,
+        renterName: request.auth.token.name || request.auth.token.email || 'Renter',
+        startDate: booking.startDate,
+        endDate: booking.endDate,
+        days: booking.days,
+        pricePerDay: booking.pricePerDay,
+        quantity: booking.quantity,
+        deliveryCost: booking.deliveryCost,
+        securityDeposit: booking.securityDeposit,
+        totalPrice: booking.totalPrice,
+        deliveryAddress: booking.deliveryAddress,
+        deliveryLat: booking.deliveryLat,
+        deliveryLon: booking.deliveryLon,
+        status: 'pending',
+        paid: false,
+        paymentReference: reference,
+        paymentExpiresAt: new Date(expiry),
+        createdAt: FieldValue.serverTimestamp(),
+      })
+    }
+    return { total: Math.round(total * 100) / 100 }
+  })
 
-  const refs = bookings.map(() => db.collection('bookings').doc())
-  const batch = db.batch()
-  for (let i = 0; i < bookings.length; i += 1) {
-    const booking = bookings[i]
-    batch.set(db.collection('notifications').doc(), {
-      userId: booking.ownerId,
-      type: 'booking_placed',
-      title: 'New booking request',
-      body: `${request.auth.token.name || request.auth.token.email || 'A renter'} wants to book "${booking.listingTitle}" for ${booking.startDate} → ${booking.endDate}.`,
-      link: '/dashboard',
-      read: false,
-      createdAt: FieldValue.serverTimestamp(),
-    })
-    batch.set(refs[i], {
-      listingId: booking.listingId,
-      listingTitle: booking.listingTitle,
-      ownerId: booking.ownerId,
-      renterId: request.auth.uid,
-      renterName: request.auth.token.name || request.auth.token.email || 'Renter',
-      startDate: booking.startDate,
-      endDate: booking.endDate,
-      days: booking.days,
-      pricePerDay: booking.pricePerDay,
-      quantity: booking.quantity,
-      deliveryCost: booking.deliveryCost,
-      securityDeposit: booking.securityDeposit,
-      totalPrice: booking.totalPrice,
-      deliveryAddress: booking.deliveryAddress,
-      deliveryLat: booking.deliveryLat,
-      deliveryLon: booking.deliveryLon,
-      status: 'pending',
-      paid: false,
-      paymentReference: reference,
-      paymentExpiresAt: new Date(expiry),
-      createdAt: FieldValue.serverTimestamp(),
-    })
-  }
-  await batch.commit()
-  return { bookingIds: refs.map((ref) => ref.id), total: Math.round(total * 100) / 100, expiresAt: expiry }
+  return { bookingIds: refs.map((ref) => ref.id), total: result.total, expiresAt: expiry }
 })
