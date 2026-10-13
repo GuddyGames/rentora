@@ -78,9 +78,9 @@ export default function Account() {
   if (!user) return null
 
   return (
-    <div className="mx-auto max-w-md px-5 py-10">
+    <div className="mx-auto max-w-md px-4 py-6 sm:px-5 sm:py-10">
       <BackButton to="/" label="Home" />
-      <h1 className="font-display text-2xl font-semibold text-midnight">My Account</h1>
+      <h1 className="font-display text-2xl font-semibold text-midnight sm:text-3xl">My Account</h1>
 
       <div className="glass mt-6 flex items-center gap-4 rounded-2xl p-5">
         <div className="flex h-14 w-14 items-center justify-center rounded-full bg-royal text-xl font-semibold text-white">
