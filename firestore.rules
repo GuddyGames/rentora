@@ -112,18 +112,8 @@ service cloud.firestore {
 
       // Only create unpaid pending bookings for yourself. Never accept paid,
       // confirmed, or payment-reference fields from the browser.
-      allow create: if isSignedIn() &&
-        request.resource.data.renterId == request.auth.uid &&
-        request.resource.data.status == 'pending' &&
-        request.resource.data.paid == false &&
-        !('paymentReference' in request.resource.data) &&
-        request.resource.data.listingId is string &&
-        request.resource.data.ownerId is string &&
-        request.resource.data.ownerId != request.auth.uid &&
-        request.resource.data.totalPrice is number &&
-        request.resource.data.totalPrice > 0 &&
-        request.resource.data.quantity is int &&
-        request.resource.data.quantity > 0;
+      // Booking creation is server-only so listing prices, owners, coupons, and availability are authoritative.
+      allow create: if false;
 
       // Payment fields can only be changed by trusted Admin SDK code. Renters
       // may cancel unpaid pending bookings; owners may progress paid bookings
