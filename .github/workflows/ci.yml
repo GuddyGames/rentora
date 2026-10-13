@@ -24,4 +24,4 @@ jobs:
       - name: Check payment functions syntax
         run: node --check functions/index.js
       - name: Install function dependencies
-        run: npm ci --prefix functions
+        run: npm install --prefix functions --no-audit --no-fund
