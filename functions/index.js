@@ -154,6 +154,9 @@ exports.checkListingAvailability = onCall(async (request) => {
   const end = Date.parse(endDate)
   const reserved = snap.docs.reduce((sum, doc) => {
     const booking = doc.data()
+    if (booking.status === 'pending' && booking.paymentExpiresAt &&
+        typeof booking.paymentExpiresAt.toMillis === 'function' &&
+        booking.paymentExpiresAt.toMillis() <= Date.now()) return sum
     const from = Date.parse(booking.startDate)
     const to = Date.parse(booking.endDate)
     return Number.isFinite(from) && Number.isFinite(to) && start <= to && end >= from
