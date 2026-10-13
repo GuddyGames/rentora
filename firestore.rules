@@ -39,7 +39,16 @@ service cloud.firestore {
 
     match /listings/{listingId} {
       allow read: if true; // public catalog
-      allow create: if isOwnerRole() && request.resource.data.ownerId == request.auth.uid;
+      allow create: if isOwnerRole() &&
+        request.resource.data.ownerId == request.auth.uid &&
+        request.resource.data.active == true &&
+        request.resource.data.featured == false &&
+        request.resource.data.moderationStatus == 'pending' &&
+        request.resource.data.ownerVerified == false &&
+        request.resource.data.pricePerDay is number &&
+        request.resource.data.pricePerDay > 0 &&
+        request.resource.data.quantity is int &&
+        request.resource.data.quantity > 0;
       allow delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isAdmin());
       // the owner can update anything; a signed-in user can bump the rating
       // rollup by exactly one review at a time (the reviews.js transaction
@@ -48,10 +57,20 @@ service cloud.firestore {
       // values directly without ever writing a real review); an admin can
       // only touch moderation fields (active/featured), not listing content
       allow update: if isSignedIn() && (
-        resource.data.ownerId == request.auth.uid ||
+        (resource.data.ownerId == request.auth.uid &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'title', 'category', 'description', 'pricePerDay', 'quantity',
+            'location', 'imageBase64', 'securityDeposit', 'deliveryCost', 'active'
+          ]) &&
+          request.resource.data.ownerId == resource.data.ownerId &&
+          request.resource.data.moderationStatus == resource.data.moderationStatus &&
+          request.resource.data.featured == resource.data.featured &&
+          request.resource.data.ownerVerified == resource.data.ownerVerified) ||
         (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ratingAvg', 'ratingCount']) &&
           request.resource.data.ratingCount == resource.data.ratingCount + 1) ||
-        (isAdmin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['active', 'featured', 'featuredUntil', 'moderationStatus', 'ownerVerified']))
+        (isAdmin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'active', 'featured', 'featuredUntil', 'moderationStatus', 'ownerVerified'
+        ]))
       );
     }
 
@@ -155,13 +174,21 @@ service cloud.firestore {
 
     match /conversations/{conversationId} {
       allow read: if isSignedIn() && (resource == null || request.auth.uid in resource.data.participantIds);
-      allow update: if isSignedIn() && request.auth.uid in resource.data.participantIds;
+      allow update: if isSignedIn() &&
+        request.auth.uid in resource.data.participantIds &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastMessage', 'lastMessageAt']) &&
+        request.resource.data.participantIds == resource.data.participantIds;
       allow create: if isSignedIn() && request.auth.uid in request.resource.data.participantIds;
       allow delete: if false;
 
       match /messages/{messageId} {
         allow read: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds;
-        allow create: if isSignedIn() && request.resource.data.senderId == request.auth.uid;
+        allow create: if isSignedIn() &&
+          request.resource.data.senderId == request.auth.uid &&
+          request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participantIds &&
+          request.resource.data.text is string &&
+          request.resource.data.text.size() > 0 &&
+          request.resource.data.text.size() <= 4000;
         allow update, delete: if false;
       }
     }
