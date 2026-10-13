@@ -60,6 +60,9 @@ exports.verifyPaystackPayment = onCall(
     if (bookings.some((booking) => booking.renterId !== request.auth.uid)) {
       throw new HttpsError('permission-denied', 'You cannot verify bookings belonging to another account.')
     }
+    if (bookings.some((booking) => booking.paymentReference !== reference)) {
+      throw new HttpsError('failed-precondition', 'This payment reference is not linked to these bookings.')
+    }
     if (bookings.some((booking) => booking.status !== 'pending' &&
       !(booking.paid === true && booking.paymentReference === reference))) {
       throw new HttpsError('failed-precondition', 'One or more bookings are no longer awaiting payment.')
@@ -175,6 +178,10 @@ exports.checkListingAvailability = onCall(async (request) => {
 exports.createPendingBookings = onCall(async (request) => {
   if (!request.auth) throw new HttpsError('unauthenticated', 'Please sign in to create a booking.')
   const { items, deliveryAddress, deliveryLat = null, deliveryLon = null, couponCode = '', expectedTotal } = request.data || {}
+  const reference = request.data && request.data.reference
+  if (typeof reference !== 'string' || !/^rentora-[a-zA-Z0-9_-]{8,110}$/.test(reference)) {
+    throw new HttpsError('invalid-argument', 'A valid checkout payment reference is required.')
+  }
   if (!Array.isArray(items) || items.length < 1 || items.length > 20 ||
       typeof deliveryAddress !== 'string' || deliveryAddress.trim().length < 5 ||
       deliveryAddress.length > 500 || !Number.isFinite(Number(expectedTotal)) || Number(expectedTotal) <= 0 ||
@@ -325,6 +332,7 @@ exports.createPendingBookings = onCall(async (request) => {
       deliveryLon: booking.deliveryLon,
       status: 'pending',
       paid: false,
+      paymentReference: reference,
       paymentExpiresAt: new Date(expiry),
       createdAt: FieldValue.serverTimestamp(),
     })
