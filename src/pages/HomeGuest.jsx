@@ -1,7 +1,15 @@
 import { Link } from 'react-router-dom'
 import { EVENT_TYPES } from '../utils/eventChecklist'
 import { EVENT_ICONS } from '../components/iconMap'
-import { ArrowRightIcon, CheckIcon, SparkleIcon } from '../components/icons'
+import { SparkleIcon } from '../components/icons'
+
+function ArrowRightIcon(props) {
+  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+}
+
+function CheckIcon(props) {
+  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m5 12 4 4L19 6" /></svg>
+}
 
 const benefits = [
   { number: '01', title: 'Find what you need', body: 'Explore event essentials from equipment owners in your area.' },
@@ -38,7 +46,7 @@ export default function HomeGuest() {
                 Find event essentials
                 <ArrowRightIcon className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </Link>
-              <Link to="/signup?mode=owner" className="inline-flex items-center justify-center gap-2 rounded-full border border-white/20 bg-white/[0.04] px-6 py-3.5 font-medium text-white transition hover:border-white/40 hover:bg-white/[0.08]">
+              <Link to="/signup" className="inline-flex items-center justify-center gap-2 rounded-full border border-white/20 bg-white/[0.04] px-6 py-3.5 font-medium text-white transition hover:border-white/40 hover:bg-white/[0.08]">
                 List your equipment
               </Link>
             </div>
