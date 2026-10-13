@@ -3,7 +3,6 @@ import { getFunctions, httpsCallable } from 'firebase/functions'
 import { useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
-import { hasConflict, createBooking } from '../services/bookings'
 import { getCoupon } from '../services/coupons'
 import { geocodeAddress } from '../utils/geocode'
 import PaymentSuccessOverlay from '../components/PaymentSuccessOverlay'
@@ -83,7 +82,7 @@ export default function Checkout() {
 
     setError('')
     setBusy(true)
-    const createdBookings = []
+    let createdBookings = []
 
     try {
       for (const item of items) {
@@ -93,30 +92,22 @@ export default function Checkout() {
         if (!item.startDate || !item.endDate || new Date(item.startDate) > new Date(item.endDate)) {
           throw new Error(`Please choose valid rental dates for “${item.title}”.`)
         }
-        const conflict = await hasConflict(item.listingId, item.startDate, item.endDate, qty, maxQty)
-        if (conflict) throw new Error(`“${item.title}” is no longer available in that quantity for those dates. Remove it from your cart and choose other dates.`)
       }
 
-      for (const item of items) {
-        const qty = Number(item.qty || 1)
-        const rentalTotal = Math.round(Number(item.pricePerDay) * Number(item.days) * qty * (1 - discountPercent / 100))
-        const bookingTotal = rentalTotal + Number(item.deliveryCost || 0) + Number(item.securityDeposit || 0) * qty
-        const ref = await createBooking({
+      const createBookings = httpsCallable(getFunctions(), 'createPendingBookings')
+      const bookingResult = await createBookings({
+        items: items.map((item) => ({
           listingId: item.listingId,
-          listingTitle: item.title,
-          ownerId: item.ownerId,
-          renterId: user.uid,
-          renterName: user.displayName || user.email || 'Renter',
+          qty: Number(item.qty || 1),
           startDate: item.startDate,
           endDate: item.endDate,
-          quantity: qty,
-          totalPrice: bookingTotal,
-          deliveryAddress: address.trim(),
-          deliveryLat: coords?.lat ?? null,
-          deliveryLon: coords?.lon ?? null,
-        })
-        createdBookings.push({ id: ref.id, totalPrice: bookingTotal })
-      }
+        })),
+        deliveryAddress: address.trim(),
+        couponCode: discountPercent > 0 ? couponCode.trim().toUpperCase() : '',
+        expectedTotal: payableTotal,
+      })
+      createdBookings = bookingResult.data.bookingIds.map((id) => ({ id }))
+      if (!createdBookings.length) throw new Error('No bookings were created. Please try again.')
 
       const reference = `rentora-${user.uid.slice(0, 8)}-${Date.now()}`
       const handler = window.PaystackPop.setup({
