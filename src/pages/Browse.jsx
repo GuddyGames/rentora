@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { getAllListings, CATEGORIES } from '../services/listings'
 import ListingCard from '../components/ListingCard'
 import { ListingCardSkeleton } from '../components/Skeleton'
-import BackButton from '../components/BackButton'
+import { Link } from 'react-router-dom'
 import { CATEGORY_ICONS } from '../components/iconMap'
 import { SparkleIcon, SearchIcon } from '../components/icons'
 
@@ -56,7 +56,7 @@ export default function Browse() {
         <div aria-hidden="true" className="pointer-events-none absolute -right-20 -top-32 h-80 w-80 rounded-full bg-royal/25 blur-3xl" />
         <div aria-hidden="true" className="pointer-events-none absolute -bottom-32 left-1/4 h-64 w-64 rounded-full bg-gold/15 blur-3xl" />
         <div className="relative mx-auto max-w-6xl">
-          <BackButton to="/" label="Home" />
+          <Link to="/" className="mb-4 inline-flex items-center gap-1.5 text-sm text-white/60 transition-colors hover:text-gold"><span aria-hidden="true">←</span> Home</Link>
           <div className="mt-5 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold">The Rentora marketplace</p>
