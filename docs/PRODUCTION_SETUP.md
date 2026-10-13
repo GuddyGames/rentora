@@ -4,8 +4,24 @@ Rentora's React client can be deployed to Vercel, but payment verification and p
 
 ## 1. Configure Firebase
 
-1. Identify the exact Firebase project that currently holds Rentora's users, listings, bookings, and coupons. Do not create a replacement project or deploy rules until the existing project ID is confirmed.
-2. From the repository root, run `firebase login`, then `firebase projects:list` and `firebase use --add` to select that existing project. This creates a local `.firebaserc`; verify its project ID before deployment and do not commit unrelated project IDs.
+1. Since Rentora's Firebase web config is already in Vercel, retrieve the existing production environment variables rather than asking for the project ID again. From the repository root, sign in to the Vercel CLI and link the existing Rentora Vercel project:
+
+   ```bash
+   npx vercel login
+   npx vercel link
+   npx vercel env pull .env.production.local
+   ```
+
+   Select the existing Vercel project and production environment. Keep `.env.production.local` private; do not commit it or paste its contents into chat.
+2. Read only the Firebase project ID from that downloaded environment file and use it to select the matching Firebase project:
+
+   ```bash
+   node -e "const fs=require('fs');const s=fs.readFileSync('.env.production.local','utf8');const m=s.match(/^VITE_FIREBASE_PROJECT_ID=(.*)$/m);if(!m)throw Error('VITE_FIREBASE_PROJECT_ID is missing');console.log(m[1].trim().replace(/^['\"]|['\"]$/g,''))"
+   firebase login
+   firebase projects:list
+   ```
+
+   Compare the printed ID with the project list. Once confirmed, run `firebase use <PROJECT_ID>` from the repository root. Do not deploy if the IDs do not match. The Firebase project ID is already in Vercel; this step makes the Firebase CLI target the same existing project.
 3. In that same project, confirm Authentication → Email/Password is enabled. Confirm Google is enabled only if you intend to offer it.
 4. Confirm Cloud Firestore is enabled and inspect the existing data before deploying the stricter rules.
 5. Copy the web app's public Firebase configuration into the Vercel environment variables (and local `.env` for development): `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_STORAGE_BUCKET`, `VITE_FIREBASE_MESSAGING_SENDER_ID`, and `VITE_FIREBASE_APP_ID`.
