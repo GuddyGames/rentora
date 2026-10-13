@@ -30,7 +30,7 @@ service cloud.firestore {
       allow update: if isSignedIn() && (
         (request.auth.uid == userId &&
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(
-            ['name', 'email', 'role', 'createdAt', 'lastActiveAt']
+            ['name', 'email', 'createdAt', 'lastActiveAt']
           )) ||
         (isAdmin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['suspended', 'isAdmin', 'verified']))
       );
@@ -85,16 +85,52 @@ service cloud.firestore {
     }
 
     match /bookings/{bookingId} {
-      // Availability-checking needs to query bookings across all renters for a
-      // given listing (date-range overlap), not just the current user's own —
-      // Firestore rejects that query entirely under a renterId/ownerId-scoped
-      // rule since it can't prove every match satisfies it without fetching
-      // each doc first. So read is open to any signed-in user; write stays locked.
-      allow read: if isSignedIn();
-      allow create: if isSignedIn() && request.resource.data.renterId == request.auth.uid;
-      // renter can only mark paid/cancel their own; owner can confirm/decline/complete
+      // Booking addresses and customer details are private. Availability is
+      // checked through a callable function that returns counts, not records.
+      allow read: if isSignedIn() &&
+        (resource.data.renterId == request.auth.uid ||
+         resource.data.ownerId == request.auth.uid || isAdmin());
+
+      // Only create unpaid pending bookings for yourself. Never accept paid,
+      // confirmed, or payment-reference fields from the browser.
+      allow create: if isSignedIn() &&
+        request.resource.data.renterId == request.auth.uid &&
+        request.resource.data.status == 'pending' &&
+        request.resource.data.paid == false &&
+        !('paymentReference' in request.resource.data) &&
+        request.resource.data.listingId is string &&
+        request.resource.data.ownerId is string &&
+        request.resource.data.ownerId != request.auth.uid &&
+        request.resource.data.totalPrice is number &&
+        request.resource.data.totalPrice > 0 &&
+        request.resource.data.quantity is int &&
+        request.resource.data.quantity > 0;
+
+      // Payment fields can only be changed by trusted Admin SDK code. Renters
+      // may cancel unpaid pending bookings; owners may progress paid bookings
+      // through the delivery lifecycle. Admins may correct lifecycle status,
+      // but cannot forge payment confirmation.
       allow update: if isSignedIn() &&
-        (resource.data.renterId == request.auth.uid || resource.data.ownerId == request.auth.uid);
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(
+          ['status', 'deliveryPhotoBase64', 'returnPhotoBase64']
+        ) &&
+        (
+          (resource.data.renterId == request.auth.uid &&
+            resource.data.status == 'pending' &&
+            resource.data.paid == false &&
+            request.resource.data.status == 'cancelled' &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])) ||
+          (resource.data.ownerId == request.auth.uid &&
+            resource.data.paid == true &&
+            (
+              (resource.data.status == 'confirmed' && request.resource.data.status == 'preparing') ||
+              (resource.data.status == 'preparing' && request.resource.data.status == 'delivered') ||
+              (resource.data.status == 'delivered' && request.resource.data.status == 'event_active') ||
+              (resource.data.status == 'event_active' && request.resource.data.status == 'returned') ||
+              (resource.data.status == 'returned' && request.resource.data.status == 'completed')
+            )) ||
+          (isAdmin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']))
+        );
       allow delete: if false;
     }
 
