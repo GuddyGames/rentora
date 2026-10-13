@@ -24,8 +24,7 @@ Rentora's React client can be deployed to Vercel, but payment verification and p
    Compare the printed ID with the project list. Once confirmed, run `firebase use <PROJECT_ID>` from the repository root. Do not deploy if the IDs do not match. The Firebase project ID is already in Vercel; this step makes the Firebase CLI target the same existing project.
 3. In that same project, confirm Authentication → Email/Password is enabled. Confirm Google is enabled only if you intend to offer it.
 4. Confirm Cloud Firestore is enabled and inspect the existing data before deploying the stricter rules.
-5. Copy the web app's public Firebase configuration into the Vercel environment variables (and local `.env` for development): `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_STORAGE_BUCKET`, `VITE_FIREBASE_MESSAGING_SENDER_ID`, and `VITE_FIREBASE_APP_ID`.
-6. Set `VITE_PAYSTACK_PUBLIC_KEY` to the Paystack **public** key for the intended environment.
+5. Because this app was already deployed with its environment configured, **keep the existing Vercel values** unless you discover a missing or incorrect value. Confirm the required names exist: `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_STORAGE_BUCKET`, `VITE_FIREBASE_MESSAGING_SENDER_ID`, `VITE_FIREBASE_APP_ID`, and `VITE_PAYSTACK_PUBLIC_KEY`. Do not replace working production values just to follow this guide.
 
 Firebase web config values are client identifiers, not server credentials. Do not commit service-account JSON or secret keys.
 
@@ -45,7 +44,7 @@ Firebase web config values are client identifiers, not server credentials. Do no
    firebase deploy --only functions,firestore:rules,firestore:indexes
    ```
 
-Checkout now generates a reference before creating pending bookings, sends it to the server, and stores it on each booking. The `verifyPaystackPayment` callable function asks Paystack's API to verify that same reference and checks it is linked to the submitted bookings, as well as transaction status, NGN currency, total amount, and booking ownership before marking bookings paid. `checkListingAvailability` returns only aggregate availability; it does not disclose other renters' booking records.
+Checkout now generates a reference before creating pending bookings, sends it to the server, and stores it on each booking. The `verifyPaystackPayment` callable function asks Paystack's API to verify that same reference and checks it is linked to the submitted bookings, as well as transaction status, NGN currency, total amount, and booking ownership before marking bookings paid. `checkListingAvailability` returns only aggregate availability; it does not disclose other renters' booking records. Booking creation re-reads listing inventory and overlapping reservations inside a Firestore transaction and creates the pending holds in that same transaction, reducing the risk of simultaneous checkouts overselling the last units. Concurrent behavior still needs to be verified against the deployed Firebase project.
 
 **Important:** Cloud Functions deployment requires a Firebase project with billing/Blaze enabled. Do not accept real payments until the function is deployed and tested with Paystack test keys. If the function is not deployed, checkout will fail closed rather than pretend that a payment succeeded.
 
@@ -63,4 +62,4 @@ Deploy the repository root to Vercel using the existing Vite settings. Add the F
 - Verify the deployed Firestore rules match this repository. Updating the file alone does not publish rules.
 - Check the GitHub Actions build result and manually test the deployed Vercel URL on a phone.
 
-The current availability check is a submit-time check, not an atomic inventory reservation lock. Two simultaneous checkouts can still race for the same final units; before accepting high-volume bookings, implement a transactional inventory hold/expiry model and test concurrent requests. Pending bookings expire in availability calculations after 15 minutes, but there is no scheduled cleanup job yet.
+Pending bookings expire in availability calculations after 15 minutes, but there is no scheduled cleanup job yet, so expired records remain in Firestore until separately cleaned up. Test simultaneous checkouts for the last available units in the deployed project before launch; source changes alone do not prove production concurrency behavior.
