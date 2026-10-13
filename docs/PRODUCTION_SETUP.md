@@ -29,7 +29,7 @@ Firebase web config values are client identifiers, not server credentials. Do no
    firebase deploy --only functions,firestore:rules,firestore:indexes
    ```
 
-The `verifyPaystackPayment` callable function asks Paystack's API to verify the reference and checks the transaction status, NGN currency, total amount, and booking ownership before marking bookings paid. `checkListingAvailability` returns only aggregate availability; it does not disclose other renters' booking records.
+Checkout now generates a reference before creating pending bookings, sends it to the server, and stores it on each booking. The `verifyPaystackPayment` callable function asks Paystack's API to verify that same reference and checks it is linked to the submitted bookings, as well as transaction status, NGN currency, total amount, and booking ownership before marking bookings paid. `checkListingAvailability` returns only aggregate availability; it does not disclose other renters' booking records.
 
 **Important:** Cloud Functions deployment requires a Firebase project with billing/Blaze enabled. Do not accept real payments until the function is deployed and tested with Paystack test keys. If the function is not deployed, checkout will fail closed rather than pretend that a payment succeeded.
 
