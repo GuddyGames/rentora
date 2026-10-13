@@ -153,10 +153,12 @@ exports.checkListingAvailability = onCall(async (request) => {
  */
 exports.createPendingBookings = onCall(async (request) => {
   if (!request.auth) throw new HttpsError('unauthenticated', 'Please sign in to create a booking.')
-  const { items, deliveryAddress, couponCode = '', expectedTotal } = request.data || {}
+  const { items, deliveryAddress, deliveryLat = null, deliveryLon = null, couponCode = '', expectedTotal } = request.data || {}
   if (!Array.isArray(items) || items.length < 1 || items.length > 20 ||
       typeof deliveryAddress !== 'string' || deliveryAddress.trim().length < 5 ||
-      deliveryAddress.length > 500 || !Number.isFinite(Number(expectedTotal)) || Number(expectedTotal) <= 0) {
+      deliveryAddress.length > 500 || !Number.isFinite(Number(expectedTotal)) || Number(expectedTotal) <= 0 ||
+      (deliveryLat !== null && (!Number.isFinite(Number(deliveryLat)) || Number(deliveryLat) < -90 || Number(deliveryLat) > 90)) ||
+      (deliveryLon !== null && (!Number.isFinite(Number(deliveryLon)) || Number(deliveryLon) < -180 || Number(deliveryLon) > 180))) {
     throw new HttpsError('invalid-argument', 'Please provide valid checkout details.')
   }
 
@@ -261,6 +263,8 @@ exports.createPendingBookings = onCall(async (request) => {
       deliveryCost,
       securityDeposit,
       deliveryAddress: deliveryAddress.trim(),
+      deliveryLat: deliveryLat === null ? null : Number(deliveryLat),
+      deliveryLon: deliveryLon === null ? null : Number(deliveryLon),
     })
   }
 
@@ -287,6 +291,8 @@ exports.createPendingBookings = onCall(async (request) => {
       securityDeposit: booking.securityDeposit,
       totalPrice: booking.totalPrice,
       deliveryAddress: booking.deliveryAddress,
+      deliveryLat: booking.deliveryLat,
+      deliveryLon: booking.deliveryLon,
       status: 'pending',
       paid: false,
       paymentExpiresAt: new Date(expiry),
