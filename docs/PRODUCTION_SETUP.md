@@ -4,10 +4,11 @@ Rentora's React client can be deployed to Vercel, but payment verification and p
 
 ## 1. Configure Firebase
 
-1. Create or select the Firebase project used by this app.
-2. Enable Authentication → Email/Password. Enable Google only if you intend to offer it.
-3. Enable Cloud Firestore.
-4. Copy the web app's public Firebase configuration into the Vercel environment variables (and local `.env` for development): `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_STORAGE_BUCKET`, `VITE_FIREBASE_MESSAGING_SENDER_ID`, and `VITE_FIREBASE_APP_ID`.
+1. Identify the exact Firebase project that currently holds Rentora's users, listings, bookings, and coupons. Do not create a replacement project or deploy rules until the existing project ID is confirmed.
+2. From the repository root, run `firebase login`, then `firebase projects:list` and `firebase use --add` to select that existing project. This creates a local `.firebaserc`; verify its project ID before deployment and do not commit unrelated project IDs.
+3. In that same project, confirm Authentication → Email/Password is enabled. Confirm Google is enabled only if you intend to offer it.
+4. Confirm Cloud Firestore is enabled and inspect the existing data before deploying the stricter rules.
+5. Copy the web app's public Firebase configuration into the Vercel environment variables (and local `.env` for development): `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_STORAGE_BUCKET`, `VITE_FIREBASE_MESSAGING_SENDER_ID`, and `VITE_FIREBASE_APP_ID`.
 5. Set `VITE_PAYSTACK_PUBLIC_KEY` to the Paystack **public** key for the intended environment.
 
 Firebase web config values are client identifiers, not server credentials. Do not commit service-account JSON or secret keys.
@@ -41,9 +42,9 @@ Deploy the repository root to Vercel using the existing Vite settings. Add the F
 - Test renter and owner signup, email/password login, Google login if enabled, and password reset.
 - Confirm a new listing starts pending and only an admin can approve or feature it.
 - Confirm a user cannot read another user's booking, edit their own role, forge `paid`, or mark a booking confirmed from browser tools.
-- Test payment success, failure, closing the Paystack modal, repeated verification, and mismatched amounts with Paystack test transactions.
+- Test payment success, failure, closing the Paystack modal, repeated verification, a reference not attached to the bookings, and mismatched amounts with Paystack test transactions.
 - Test overlapping date ranges and quantities, including two customers attempting to reserve the last units.
 - Verify the deployed Firestore rules match this repository. Updating the file alone does not publish rules.
 - Check the GitHub Actions build result and manually test the deployed Vercel URL on a phone.
 
-The availability check is a submit-time check, not an inventory reservation lock. For high traffic or scarce inventory, introduce a server-side transactional reservation/expiry flow before launch.
+The current availability check is a submit-time check, not an atomic inventory reservation lock. Two simultaneous checkouts can still race for the same final units; before accepting high-volume bookings, implement a transactional inventory hold/expiry model and test concurrent requests. Pending bookings expire in availability calculations after 15 minutes, but there is no scheduled cleanup job yet.
