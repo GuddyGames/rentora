@@ -38,7 +38,8 @@ service cloud.firestore {
     }
 
     match /listings/{listingId} {
-      allow read: if true; // public catalog
+      allow read: if (resource.data.active == true && resource.data.moderationStatus == 'approved') ||
+        (isSignedIn() && (resource.data.ownerId == request.auth.uid || isAdmin()));
       allow create: if isOwnerRole() &&
         request.resource.data.ownerId == request.auth.uid &&
         request.resource.data.active == true &&
