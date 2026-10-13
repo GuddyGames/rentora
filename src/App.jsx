@@ -1,5 +1,6 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, useLocation } from 'react-router-dom'
 import Navbar from './components/Navbar'
+import MobileTabBar from './components/MobileTabBar'
 import ProtectedRoute from './components/ProtectedRoute'
 import Home from './pages/Home'
 import Browse from './pages/Browse'
@@ -28,9 +29,11 @@ import RefundPolicy from './pages/RefundPolicy'
 import Footer from './components/Footer'
 
 export default function App() {
+  const location = useLocation()
   return (
-    <div className="flex min-h-screen flex-col bg-mist">
+    <div className="flex min-h-screen flex-col bg-mist pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:pb-0">
       <Navbar />
+      <div key={location.pathname} className="route-screen flex min-w-0 flex-1 flex-col">
       <Routes>
         <Route path="/" element={<Home />} />
         <Route
@@ -176,6 +179,8 @@ export default function App() {
           }
         />
       </Routes>
+      </div>
+      <MobileTabBar />
       <Footer />
     </div>
   )
