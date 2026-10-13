@@ -11,6 +11,7 @@ import {
   serverTimestamp,
 } from 'firebase/firestore'
 import { db } from '../firebase'
+import { getFunctions, httpsCallable } from 'firebase/functions'
 import { createNotification } from './notifications'
 
 const bookingsRef = collection(db, 'bookings')
@@ -46,24 +47,15 @@ export function nextStatus(currentStatus) {
 // — the real risk — never actually verified enough units existed for
 // larger quantities either.
 export async function hasConflict(listingId, startDate, endDate, requestedQty = 1, totalQty = 1) {
-  const q = query(
-    bookingsRef,
-    where('listingId', '==', listingId),
-    where('status', 'in', ['pending', 'confirmed'])
-  )
-  const snap = await getDocs(q)
-  const start = new Date(startDate).getTime()
-  const end = new Date(endDate).getTime()
-
-  const overlappingQty = snap.docs.reduce((sum, d) => {
-    const b = d.data()
-    const bStart = new Date(b.startDate).getTime()
-    const bEnd = new Date(b.endDate).getTime()
-    const overlaps = start <= bEnd && end >= bStart
-    return overlaps ? sum + (b.quantity || 1) : sum
-  }, 0)
-
-  return overlappingQty + requestedQty > totalQty
+  const checkAvailability = httpsCallable(getFunctions(), 'checkListingAvailability')
+  const result = await checkAvailability({
+    listingId,
+    startDate,
+    endDate,
+    requestedQty: Number(requestedQty),
+    totalQty: Number(totalQty),
+  })
+  return result.data?.available !== true
 }
 
 export async function createBooking({ listingId, listingTitle, ownerId, renterId, renterName, startDate, endDate, totalPrice, quantity, deliveryAddress, deliveryLat, deliveryLon }) {
