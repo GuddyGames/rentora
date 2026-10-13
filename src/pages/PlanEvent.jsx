@@ -145,7 +145,7 @@ export default function PlanEvent() {
   const step = STEPS[stepIdx]
 
   return (
-    <div className="mx-auto max-w-xl px-5 py-14">
+    <div className="mx-auto max-w-xl px-4 py-8 sm:px-5 sm:py-12 md:py-14">
       {stepIdx === 0 ? (
         <BackButton to="/" />
       ) : (
@@ -162,7 +162,7 @@ export default function PlanEvent() {
       </p>
 
       {/* progress dots */}
-      <div className="mt-4 flex gap-1.5">
+      <div className="mt-4 flex flex-wrap gap-1.5">
         {STEPS.map((s, i) => (
           <div key={s} className={`h-1 flex-1 rounded-full ${i <= stepIdx ? 'bg-gold' : 'bg-black/5'}`} />
         ))}
@@ -171,7 +171,7 @@ export default function PlanEvent() {
       {step === 'type' && (
         <div className="animate-pop-in mt-8">
           <h1 className="font-display text-2xl font-semibold text-midnight">What event are you planning?</h1>
-          <div className="mt-6 grid grid-cols-2 gap-3">
+          <div className="mt-6 grid grid-cols-1 gap-3 min-[360px]:grid-cols-2">
             {EVENT_TYPES.map((t) => {
               const Icon = EVENT_ICONS[t.id]
               return (
