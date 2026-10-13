@@ -140,6 +140,11 @@ service cloud.firestore {
             request.resource.data.status == 'cancelled' &&
             request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])) ||
           (resource.data.ownerId == request.auth.uid &&
+            resource.data.status == 'pending' &&
+            resource.data.paid == false &&
+            request.resource.data.status == 'cancelled' &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])) ||
+          (resource.data.ownerId == request.auth.uid &&
             resource.data.paid == true &&
             (
               (resource.data.status == 'confirmed' && request.resource.data.status == 'preparing') ||
