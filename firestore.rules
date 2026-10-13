@@ -67,8 +67,17 @@ service cloud.firestore {
           request.resource.data.moderationStatus == resource.data.moderationStatus &&
           request.resource.data.featured == resource.data.featured &&
           request.resource.data.ownerVerified == resource.data.ownerVerified) ||
-        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ratingAvg', 'ratingCount']) &&
-          request.resource.data.ratingCount == resource.data.ratingCount + 1) ||
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ratingAvg', 'ratingCount', 'lastReviewId']) &&
+          request.resource.data.ratingCount == resource.data.ratingCount + 1 &&
+          request.resource.data.ratingAvg is number &&
+          request.resource.data.ratingAvg >= 1 &&
+          request.resource.data.ratingAvg <= 5 &&
+          request.resource.data.lastReviewId is string &&
+          getAfter(/databases/$(database)/documents/listings/$(listingId)/reviews/$(request.resource.data.lastReviewId)).data.renterId == request.auth.uid &&
+          getAfter(/databases/$(database)/documents/listings/$(listingId)/reviews/$(request.resource.data.lastReviewId)).data.bookingId == request.resource.data.lastReviewId &&
+          getAfter(/databases/$(database)/documents/listings/$(listingId)/reviews/$(request.resource.data.lastReviewId)).data.rating is int &&
+          getAfter(/databases/$(database)/documents/listings/$(listingId)/reviews/$(request.resource.data.lastReviewId)).data.rating >= 1 &&
+          getAfter(/databases/$(database)/documents/listings/$(listingId)/reviews/$(request.resource.data.lastReviewId)).data.rating <= 5) ||
         (isAdmin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'active', 'featured', 'featuredUntil', 'moderationStatus', 'ownerVerified'
         ]))
@@ -157,6 +166,11 @@ service cloud.firestore {
       allow create: if isSignedIn() &&
         request.resource.data.renterId == request.auth.uid &&
         reviewId == request.resource.data.bookingId &&
+        request.resource.data.rating is int &&
+        request.resource.data.rating >= 1 &&
+        request.resource.data.rating <= 5 &&
+        request.resource.data.text is string &&
+        request.resource.data.text.size() <= 1000 &&
         get(/databases/$(database)/documents/bookings/$(reviewId)).data.renterId == request.auth.uid &&
         get(/databases/$(database)/documents/bookings/$(reviewId)).data.listingId == listingId &&
         get(/databases/$(database)/documents/bookings/$(reviewId)).data.status == 'completed';
