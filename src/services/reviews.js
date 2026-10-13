@@ -1,45 +1,56 @@
 import {
   collection,
-  setDoc,
   getDoc,
   getDocs,
   query,
   orderBy,
-  serverTimestamp,
   doc,
   runTransaction,
+  serverTimestamp,
 } from 'firebase/firestore'
 import { db } from '../firebase'
 
-// Reviews live in a subcollection under each listing: listings/{id}/reviews/{reviewId}
-// — the review's document ID is always the bookingId. That's not just a
-// convention: the security rule requires it, both to verify (via get()) that
-// this booking is real, completed, and belongs to this renter, and to make a
-// second review attempt on the same booking a rules-level "update" (denied)
-// rather than a fresh "create".
+// Reviews are keyed by booking ID. Creating the review and updating the
+// listing aggregate in one transaction prevents duplicate submissions from
+// incrementing the rating more than once.
 export async function addReview({ listingId, bookingId, renterId, renterName, rating, text }) {
   const reviewRef = doc(db, 'listings', listingId, 'reviews', bookingId)
   const listingRef = doc(db, 'listings', listingId)
+  const numericRating = Number(rating)
+  const reviewText = typeof text === 'string' ? text.trim() : ''
 
-  await setDoc(reviewRef, {
-    bookingId,
-    renterId,
-    renterName,
-    rating: Number(rating),
-    text,
-    createdAt: serverTimestamp(),
-  })
+  if (!Number.isInteger(numericRating) || numericRating < 1 || numericRating > 5) {
+    throw new Error('Choose a rating from 1 to 5.')
+  }
+  if (reviewText.length > 1000) throw new Error('Review text must be 1,000 characters or fewer.')
 
-  // roll the new rating into the listing's running average
   await runTransaction(db, async (tx) => {
-    const listingSnap = await tx.get(listingRef)
-    if (!listingSnap.exists()) return
+    const [reviewSnap, listingSnap] = await Promise.all([
+      tx.get(reviewRef),
+      tx.get(listingRef),
+    ])
+    if (reviewSnap.exists()) throw new Error('You have already reviewed this booking.')
+    if (!listingSnap.exists()) throw new Error('This listing no longer exists.')
+
     const data = listingSnap.data()
-    const prevCount = data.ratingCount || 0
-    const prevAvg = data.ratingAvg || 0
+    const prevCount = Number(data.ratingCount) || 0
+    const prevAvg = Number(data.ratingAvg) || 0
     const newCount = prevCount + 1
-    const newAvg = (prevAvg * prevCount + Number(rating)) / newCount
-    tx.update(listingRef, { ratingAvg: newAvg, ratingCount: newCount })
+    const newAvg = (prevAvg * prevCount + numericRating) / newCount
+
+    tx.set(reviewRef, {
+      bookingId,
+      renterId,
+      renterName: typeof renterName === 'string' ? renterName.slice(0, 120) : 'Renter',
+      rating: numericRating,
+      text: reviewText,
+      createdAt: serverTimestamp(),
+    })
+    tx.update(listingRef, {
+      ratingAvg: newAvg,
+      ratingCount: newCount,
+      lastReviewId: bookingId,
+    })
   })
 }
 
