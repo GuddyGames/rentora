@@ -72,7 +72,11 @@ export async function deleteListing(id) {
 
 export async function getListing(id) {
   const snap = await getDoc(doc(db, 'listings', id))
-  return snap.exists() ? { id: snap.id, ...snap.data() } : null
+  if (!snap.exists()) return null
+  const listing = { id: snap.id, ...snap.data() }
+  // Public listing pages should never surface drafts, rejected, or inactive items.
+  if (listing.active !== true || listing.moderationStatus !== 'approved') return null
+  return listing
 }
 
 export async function getAllListings({ category } = {}) {
