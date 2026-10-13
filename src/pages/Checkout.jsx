@@ -12,7 +12,7 @@ import AddressMap from '../components/AddressMap'
 import BackButton from '../components/BackButton'
 
 export default function Checkout() {
-  const { items, total, clearCart } = useCart()
+  const { items, clearCart } = useCart()
   const { user } = useAuth()
   const navigate = useNavigate()
 
