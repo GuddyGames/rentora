@@ -276,6 +276,15 @@ exports.createPendingBookings = onCall(async (request) => {
   const batch = db.batch()
   for (let i = 0; i < bookings.length; i += 1) {
     const booking = bookings[i]
+    batch.set(db.collection('notifications').doc(), {
+      userId: booking.ownerId,
+      type: 'booking_placed',
+      title: 'New booking request',
+      body: `${request.auth.token.name || request.auth.token.email || 'A renter'} wants to book "${booking.listingTitle}" for ${booking.startDate} → ${booking.endDate}.`,
+      link: '/dashboard',
+      read: false,
+      createdAt: FieldValue.serverTimestamp(),
+    })
     batch.set(refs[i], {
       listingId: booking.listingId,
       listingTitle: booking.listingTitle,
