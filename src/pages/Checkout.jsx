@@ -29,10 +29,11 @@ export default function Checkout() {
   const [showSuccess, setShowSuccess] = useState(false)
 
   // Discount applies to rental charges only; delivery and refundable deposits remain unchanged.
-  const discountedTotal = items.reduce((sum, item) => {
-    const rental = Math.round(item.pricePerDay * item.days * item.qty * (1 - discountPercent / 100))
-    return sum + rental + item.deliveryCost + (item.securityDeposit * item.qty)
-  }, 0)
+  const rentalSubtotal = items.reduce((sum, item) => sum + item.pricePerDay * item.days * item.qty, 0)
+  const deliveryTotal = items.reduce((sum, item) => sum + item.deliveryCost, 0)
+  const depositTotal = items.reduce((sum, item) => sum + item.securityDeposit * item.qty, 0)
+  const discountTotal = Math.round(rentalSubtotal * discountPercent / 100)
+  const discountedTotal = rentalSubtotal - discountTotal + deliveryTotal + depositTotal
 
   async function handlePreviewLocation() {
     setGeocodeError('')
@@ -152,9 +153,40 @@ export default function Checkout() {
   return (
     <div className="mx-auto max-w-lg px-5 py-10">
       <BackButton to="/cart" label="Cart" />
-      <h1 className="font-display text-3xl font-semibold text-midnight">Checkout</h1>
+      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold">Step 2 of 3</p>
+      <h1 className="mt-2 font-display text-3xl font-semibold text-midnight">Delivery & checkout</h1>
+      <p className="mt-2 text-sm leading-6 text-midnight/55">Confirm where your rentals should arrive, then review the total before paying.</p>
 
-      <label className="mt-6 block text-sm text-midnight/70">
+      <div className="mt-5 flex items-center gap-2 rounded-2xl border border-black/[0.06] bg-white p-3">
+        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald text-xs font-bold text-white">✓</span>
+        <span className="text-xs font-medium text-midnight/55">Cart</span>
+        <span className="h-px flex-1 bg-black/10" />
+        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-midnight text-xs font-bold text-white">2</span>
+        <span className="text-xs font-semibold text-midnight">Delivery</span>
+        <span className="h-px flex-1 bg-black/10" />
+        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-black/5 text-xs font-bold text-midnight/40">3</span>
+        <span className="text-xs text-midnight/40">Payment</span>
+      </div>
+
+      <section className="mt-5 rounded-2xl border border-black/[0.06] bg-white p-4">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="font-display text-lg font-semibold text-midnight">Your rentals</h2>
+          <button type="button" onClick={() => navigate('/cart')} className="text-xs font-semibold text-royal hover:underline">Edit cart</button>
+        </div>
+        <div className="mt-3 divide-y divide-black/[0.06]">
+          {items.map((item) => (
+            <div key={item.listingId} className="flex items-center justify-between gap-3 py-3">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium text-midnight">{item.title}</p>
+                <p className="mt-1 text-xs text-midnight/45">{item.qty} item{item.qty === 1 ? '' : 's'} · {item.days} day{item.days === 1 ? '' : 's'} · {item.startDate} → {item.endDate}</p>
+              </div>
+              <span className="shrink-0 font-mono text-sm font-semibold text-midnight">₦{(item.pricePerDay * item.days * item.qty).toLocaleString()}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <label className="mt-6 block text-sm font-medium text-midnight/75">
         Delivery address
         <textarea
           value={address}
@@ -201,13 +233,18 @@ export default function Checkout() {
         I agree to the rental agreement — I'm responsible for equipment condition until it's returned, and refundable deposits are released after inspection.
       </label>
 
-      <div className="mt-6 rounded-xl border border-black/10 bg-white p-5 text-sm text-midnight/80">
-        {discountPercent > 0 && (
-          <div className="flex justify-between text-gold"><span>Discount</span><span>-{discountPercent}%</span></div>
-        )}
-        <div className="mt-1 flex justify-between border-t border-black/10 pt-2 font-mono text-base font-semibold text-midnight">
-          <span>Total due</span><span>₦{discountedTotal.toLocaleString()}</span>
+      <div className="mt-6 rounded-2xl border border-black/[0.06] bg-white p-5 text-sm text-midnight/80">
+        <h2 className="font-display text-lg font-semibold text-midnight">Payment summary</h2>
+        <div className="mt-4 space-y-3">
+          <div className="flex justify-between gap-3"><span className="text-midnight/55">Rental subtotal</span><span>₦{rentalSubtotal.toLocaleString()}</span></div>
+          {discountTotal > 0 && <div className="flex justify-between gap-3 text-emerald"><span>Coupon discount ({discountPercent}%)</span><span>−₦{discountTotal.toLocaleString()}</span></div>}
+          {deliveryTotal > 0 && <div className="flex justify-between gap-3"><span className="text-midnight/55">Delivery</span><span>₦{deliveryTotal.toLocaleString()}</span></div>}
+          {depositTotal > 0 && <div className="flex justify-between gap-3"><span className="text-midnight/55">Refundable deposits</span><span>₦{depositTotal.toLocaleString()}</span></div>}
+          <div className="flex justify-between gap-3 border-t border-dashed border-black/15 pt-4 font-semibold text-midnight">
+            <span>Total due now</span><span className="font-mono text-lg">₦{discountedTotal.toLocaleString()}</span>
+          </div>
         </div>
+        <p className="mt-3 text-xs leading-5 text-midnight/45">Refundable deposits are included in today's payment and are returned after the rental is completed and the equipment is inspected, subject to the rental agreement.</p>
       </div>
 
       {error && <p className="mt-3 text-sm text-ruby">{error}</p>}
