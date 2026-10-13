@@ -179,3 +179,98 @@ input, select, textarea {
     padding-right: .875rem !important;
   }
 }
+
+
+/* App-like mobile shell */
+@media (max-width: 767px) {
+  html {
+    scroll-padding-top: 4.75rem;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    overscroll-behavior-y: none;
+  }
+
+  .route-screen {
+    animation: app-screen-enter 180ms ease-out both;
+  }
+
+  .mobile-tabbar {
+    position: fixed;
+    inset-inline: 0;
+    bottom: 0;
+    z-index: 60;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    padding: .45rem .4rem max(.45rem, env(safe-area-inset-bottom));
+    border-top: 1px solid rgba(15, 23, 42, .08);
+    background: rgba(255, 255, 255, .94);
+    -webkit-backdrop-filter: blur(22px) saturate(170%);
+    backdrop-filter: blur(22px) saturate(170%);
+    box-shadow: 0 -8px 28px rgba(15, 23, 42, .06);
+  }
+
+  .mobile-tabbar-item {
+    display: flex;
+    min-width: 0;
+    min-height: 3.25rem;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: .25rem;
+    border-radius: .9rem;
+    color: rgba(31, 41, 55, .55);
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 1.1;
+    text-decoration: none;
+    transition: color 150ms ease, background-color 150ms ease, transform 150ms ease;
+  }
+
+  .mobile-tabbar-item.is-active {
+    color: #1d4ed8;
+    background: rgba(37, 99, 235, .08);
+  }
+
+  .mobile-tabbar-item:active {
+    transform: scale(.96);
+  }
+
+  /* Native-feeling horizontal chips and card interaction. */
+  .mobile-horizontal-scroll {
+    display: flex;
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    scroll-snap-type: x proximity;
+  }
+
+  .mobile-horizontal-scroll::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mobile-horizontal-scroll > * {
+    scroll-snap-align: start;
+  }
+
+  /* Use dynamic viewport sizing where browser chrome expands/collapses. */
+  .mobile-full-height {
+    min-height: calc(100dvh - 4.5rem - env(safe-area-inset-bottom));
+  }
+
+  .mobile-edge-padding {
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
+}
+
+@keyframes app-screen-enter {
+  from { opacity: .7; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .route-screen { animation: none; }
+}
