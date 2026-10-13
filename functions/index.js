@@ -108,7 +108,8 @@ exports.verifyPaystackPayment = onCall(
 
 /** Availability lookup without exposing other customers' booking records. */
 exports.checkListingAvailability = onCall(async (request) => {
-  if (!request.auth) throw new HttpsError('unauthenticated', 'Please sign in to check availability.')
+  // Public catalog browsing may check aggregate availability without signing in.
+  // The function returns no renter names, addresses, or booking identifiers.
   const { listingId, startDate, endDate, requestedQty = 1, totalQty = 1 } = request.data || {}
   if (typeof listingId !== 'string' || !listingId || typeof startDate !== 'string' ||
       typeof endDate !== 'string' || !Number.isInteger(requestedQty) || !Number.isInteger(totalQty) ||
