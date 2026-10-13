@@ -2,7 +2,9 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
-import { hasConflict, createBooking, markPaid } from '../services/bookings'
+import { getFunctions, httpsCallable } from 'firebase/functions'
+import firebaseApp from '../firebase'
+import { hasConflict, createBooking } from '../services/bookings'
 import { getCoupon } from '../services/coupons'
 import { geocodeAddress } from '../utils/geocode'
 import PaymentSuccessOverlay from '../components/PaymentSuccessOverlay'
@@ -10,7 +12,7 @@ import AddressMap from '../components/AddressMap'
 import BackButton from '../components/BackButton'
 
 export default function Checkout() {
-  const { items, total, clearCart } = useCart()
+  const { items, clearCart } = useCart()
   const { user } = useAuth()
   const navigate = useNavigate()
 
@@ -26,7 +28,11 @@ export default function Checkout() {
   const [error, setError] = useState('')
   const [showSuccess, setShowSuccess] = useState(false)
 
-  const discountedTotal = Math.round(total * (1 - discountPercent / 100))
+  // Discount applies to rental charges only; delivery and refundable deposits remain unchanged.
+  const discountedTotal = items.reduce((sum, item) => {
+    const rental = Math.round(item.pricePerDay * item.days * item.qty * (1 - discountPercent / 100))
+    return sum + rental + item.deliveryCost + (item.securityDeposit * item.qty)
+  }, 0)
 
   async function handlePreviewLocation() {
     setGeocodeError('')
@@ -100,25 +106,34 @@ export default function Checkout() {
       }
 
       if (window.PaystackPop && import.meta.env.VITE_PAYSTACK_PUBLIC_KEY) {
+        const functions = getFunctions(firebaseApp, 'us-central1')
+        const verifyPayment = httpsCallable(functions, 'verifyRentoraPayment')
         const handler = window.PaystackPop.setup({
           key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY,
           email: user.email,
-          amount: discountedTotal * 100,
+          amount: Math.round(createdBookings.reduce((sum, booking) => sum + booking.totalPrice, 0) * 100),
           currency: 'NGN',
           ref: createdBookings[0].id,
-          callback: () => {
-            Promise.all(createdBookings.map((b) => markPaid(b, createdBookings[0].id))).then(() => {
+          callback: async (response) => {
+            try {
+              await verifyPayment({
+                bookingIds: createdBookings.map((booking) => booking.id),
+                reference: response.reference,
+              })
               clearCart()
               setShowSuccess(true)
-            })
+            } catch (verificationError) {
+              console.error('Server-side payment verification failed', verificationError)
+              setError('We could not verify this payment yet. Do not pay again. Keep this reference and contact support if your booking does not update: ' + response.reference)
+              setBusy(false)
+            }
           },
           onClose: () => setBusy(false),
         })
         handler.openIframe()
       } else {
-        // Paystack key not set yet — bookings are still recorded as pending.
-        clearCart()
-        setShowSuccess(true)
+        setError('Online payment is not configured right now. Your bookings have not been paid. Please contact support or try again later.')
+        setBusy(false)
       }
     } catch (e) {
       setError(e.message)
